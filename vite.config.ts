@@ -1,0 +1,30 @@
+import { defineConfig } from "vite-plus";
+
+export default defineConfig({
+  pack: {
+    entry: {
+      "body-limit/body-limit": "src/body-limit/body-limit.ts",
+      "cookies/cookies": "src/cookies/cookies.ts",
+      "etag/etag": "src/etag/etag.ts",
+      "session/session": "src/session/session.ts",
+      "timeout/timeout": "src/timeout/timeout.ts",
+    },
+    format: "esm",
+    dts: true,
+    fixedExtension: false,
+    clean: true,
+  },
+  lint: {
+    ignorePatterns: ["**/dist/**", "**/node_modules/**"],
+    options: {
+      typeAware: true,
+      typeCheck: true,
+    },
+  },
+  fmt: {
+    ignorePatterns: ["**/dist/**", "**/node_modules/**"],
+    printWidth: 120,
+    singleQuote: false,
+    semi: true,
+  },
+});

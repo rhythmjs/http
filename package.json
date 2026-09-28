@@ -1,0 +1,74 @@
+{
+  "name": "@rhythmjs/http",
+  "version": "0.0.1",
+  "description": "HTTP utility middleware (cookies, sessions, etag, timeout, body limit) for Rhythm routers and handlers.",
+  "keywords": [
+    "body-limit",
+    "cookies",
+    "etag",
+    "http",
+    "middleware",
+    "rhythm",
+    "session",
+    "timeout"
+  ],
+  "license": "ISC",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/rhythmjs/http.git"
+  },
+  "files": [
+    "dist"
+  ],
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    "./body-limit": {
+      "types": "./dist/body-limit/body-limit.d.ts",
+      "default": "./dist/body-limit/body-limit.js"
+    },
+    "./cookies": {
+      "types": "./dist/cookies/cookies.d.ts",
+      "default": "./dist/cookies/cookies.js"
+    },
+    "./etag": {
+      "types": "./dist/etag/etag.d.ts",
+      "default": "./dist/etag/etag.js"
+    },
+    "./session": {
+      "types": "./dist/session/session.d.ts",
+      "default": "./dist/session/session.js"
+    },
+    "./timeout": {
+      "types": "./dist/timeout/timeout.d.ts",
+      "default": "./dist/timeout/timeout.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "vp pack",
+    "prepublishOnly": "vp check && vp test && vp pack",
+    "typecheck": "tsc --noEmit",
+    "test": "vp test",
+    "lint": "vp lint",
+    "fmt": "vp fmt",
+    "fmt:check": "vp fmt --check",
+    "check": "vp check"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.3",
+    "typescript": "^7.0.2",
+    "vite-plus": "^1.0.0"
+  },
+  "peerDependencies": {
+    "@rhythmjs/rhythm": "^0.0.1",
+    "@rhythmjs/router": "^0.0.1"
+  },
+  "engines": {
+    "node": ">=20.19.0"
+  },
+  "packageManager": "pnpm@10.33.2"
+}

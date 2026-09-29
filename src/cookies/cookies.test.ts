@@ -3,7 +3,7 @@ import { Rhythm } from "@rhythmjs/rhythm";
 import { RhythmRouter } from "@rhythmjs/router";
 import { toFetchHandler } from "@rhythmjs/router/adapters/bun";
 import type { RhythmHttpContext } from "@rhythmjs/router/adapters/context";
-import { cookies, parseCookies, serializeCookie, type CookiesContext } from "./cookies";
+import { cookies, parseCookies, serializeCookie } from "./cookies";
 
 const serve = (router: RhythmRouter<any>) => toFetchHandler(new Rhythm<RhythmHttpContext>().use(router.middleware()));
 

@@ -3,11 +3,13 @@
   "version": "0.0.2",
   "description": "HTTP utility middleware (cookies, sessions, etag, timeout, body limit) for Rhythm routers and handlers.",
   "keywords": [
+    "async-local-storage",
     "body-limit",
     "cookies",
     "etag",
     "http",
     "middleware",
+    "request-scope",
     "rhythm",
     "session",
     "timeout"
@@ -34,6 +36,10 @@
     "./etag": {
       "types": "./dist/etag/etag.d.ts",
       "default": "./dist/etag/etag.js"
+    },
+    "./request-scope": {
+      "types": "./dist/request-scope/request-scope.d.ts",
+      "default": "./dist/request-scope/request-scope.js"
     },
     "./session": {
       "types": "./dist/session/session.d.ts",

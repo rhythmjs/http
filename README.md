@@ -105,6 +105,49 @@ new RhythmRouter().use(bodyLimit(1024 * 1024)).post("/upload", async (ctx) => {
 });
 ```
 
+## `@rhythmjs/http/request-scope`
+
+Opens a per-request scope (backed by
+[`AsyncLocalStorage`](https://nodejs.org/api/async_context.html)) holding the current
+`RhythmHttpContext` plus a request-local key-value store, readable anywhere in the call stack — loggers,
+database helpers, service functions — without threading `ctx` through every signature.
+
+```ts
+import { requestScope, RequestScope } from "@rhythmjs/http/request-scope";
+
+new RhythmRouter()
+  .use(requestScope())
+  .use(async (_ctx, next) => {
+    RequestScope.set("requestId", crypto.randomUUID());
+    await next();
+  })
+  .get("/greet", (ctx) => {
+    ctx.response.body = greeting();
+  });
+
+// Anywhere else, no ctx parameter needed:
+function greeting() {
+  const path = new URL(RequestScope.context().request.url).pathname;
+  return `Hello from ${path} (request ${RequestScope.get("requestId")})`;
+}
+```
+
+- `requestScope()` — register it before any middleware or handler that uses `RequestScope`. Each request
+  gets its own scope; concurrent requests never see each other's context or store.
+- `RequestScope.context<TContext>()` — the current context. Pass your extended context type (e.g.
+  `RequestScope.context<RhythmHttpContext & CookiesContext>()`) for typed access to properties added by
+  earlier middleware.
+- `RequestScope.get(key)` / `set(key, value)` / `has(key)` / `delete(key)` — the request-local store, for
+  values that belong to the request but not on the context (request ids, loggers, the authenticated
+  user). Augment the `RequestScopeStore` interface via declaration merging to type your keys.
+- `RequestScope.run(context, fn)` — open a scope manually, for tests and non-HTTP entry points that reuse
+  request-scoped helpers.
+- Naming convention: bare accessors (`context()`, `get()`, `set()`, …) throw `RequestScopeError` when no
+  scope is active; `contextOrNull()` and `isActive()` never throw, for code that runs both inside and
+  outside requests.
+- Requires an `AsyncLocalStorage`-capable runtime: Node.js, Bun, and Deno work out of the box; on
+  Cloudflare Workers enable the `nodejs_compat` (or `nodejs_als`) compatibility flag.
+
 ## Development
 
 ```sh

@@ -1,10 +1,14 @@
 import { describe, expect, test } from "vite-plus/test";
+import { Rhythm } from "@rhythmjs/rhythm";
 import { RhythmRouter } from "@rhythmjs/router";
 import { toFetchHandler } from "@rhythmjs/router/adapters/bun";
+import type { RhythmHttpContext } from "@rhythmjs/router/adapters/context";
 import { bodyLimit } from "./body-limit";
 
+const serve = (router: RhythmRouter) => toFetchHandler(new Rhythm<RhythmHttpContext>().use(router.routes()));
+
 const app = (maxBytes: number) =>
-  toFetchHandler(
+  serve(
     new RhythmRouter().use(bodyLimit(maxBytes)).post("/upload", async (ctx) => {
       ctx.response.body = `received ${(await ctx.request.clone().arrayBuffer()).byteLength} bytes`;
     }),
@@ -38,7 +42,7 @@ describe("bodyLimit", () => {
   });
 
   test("lets bodyless requests through regardless of the limit", async () => {
-    const handler = toFetchHandler(
+    const handler = serve(
       new RhythmRouter().use(bodyLimit(0)).get("/ping", (ctx) => {
         ctx.response.body = "pong";
       }),

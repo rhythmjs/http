@@ -1,10 +1,14 @@
 import { describe, expect, test } from "vite-plus/test";
+import { Rhythm } from "@rhythmjs/rhythm";
 import { RhythmRouter } from "@rhythmjs/router";
 import { toFetchHandler } from "@rhythmjs/router/adapters/bun";
+import type { RhythmHttpContext } from "@rhythmjs/router/adapters/context";
 import { MemoryStore, session, type SessionContext, type SessionData, type SessionOptions } from "./session";
 
+const serve = (router: RhythmRouter<any>) => toFetchHandler(new Rhythm<RhythmHttpContext>().use(router.routes()));
+
 const app = (options?: SessionOptions) =>
-  toFetchHandler(
+  serve(
     new RhythmRouter()
       .use<SessionContext>(session(options))
       .get("/read", (ctx) => {

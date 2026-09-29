@@ -1,11 +1,15 @@
 import { describe, expect, test } from "vite-plus/test";
+import { Rhythm } from "@rhythmjs/rhythm";
 import { RhythmRouter } from "@rhythmjs/router";
 import { toFetchHandler } from "@rhythmjs/router/adapters/bun";
+import type { RhythmHttpContext } from "@rhythmjs/router/adapters/context";
 import { cookies, parseCookies, serializeCookie, type CookiesContext } from "./cookies";
+
+const serve = (router: RhythmRouter<any>) => toFetchHandler(new Rhythm<RhythmHttpContext>().use(router.routes()));
 
 describe("cookies", () => {
   test("parses incoming cookies and exposes them on ctx.cookies", async () => {
-    const app = toFetchHandler(
+    const app = serve(
       new RhythmRouter().use<CookiesContext>(cookies()).get("/", (ctx) => {
         ctx.response.body = JSON.stringify({ theme: ctx.cookies.get("theme"), all: ctx.cookies.getAll() });
       }),
@@ -17,7 +21,7 @@ describe("cookies", () => {
   });
 
   test("returns undefined for a missing cookie", async () => {
-    const app = toFetchHandler(
+    const app = serve(
       new RhythmRouter().use<CookiesContext>(cookies()).get("/", (ctx) => {
         ctx.response.body = String(ctx.cookies.get("missing"));
       }),
@@ -29,7 +33,7 @@ describe("cookies", () => {
   });
 
   test("sets a cookie with a default path and the given attributes", async () => {
-    const app = toFetchHandler(
+    const app = serve(
       new RhythmRouter().use<CookiesContext>(cookies()).get("/", (ctx) => {
         ctx.cookies.set("theme", "dark mode", { httpOnly: true, sameSite: "lax", maxAge: 3600 });
         ctx.response.body = "ok";
@@ -42,7 +46,7 @@ describe("cookies", () => {
   });
 
   test("sets multiple cookies as separate set-cookie headers", async () => {
-    const app = toFetchHandler(
+    const app = serve(
       new RhythmRouter().use<CookiesContext>(cookies()).get("/", (ctx) => {
         ctx.cookies.set("a", "1");
         ctx.cookies.set("b", "2");
@@ -56,7 +60,7 @@ describe("cookies", () => {
   });
 
   test("delete() expires the cookie", async () => {
-    const app = toFetchHandler(
+    const app = serve(
       new RhythmRouter().use<CookiesContext>(cookies()).get("/", (ctx) => {
         ctx.cookies.delete("theme");
         ctx.response.body = "ok";

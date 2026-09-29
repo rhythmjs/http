@@ -1,10 +1,14 @@
 import { describe, expect, test } from "vite-plus/test";
+import { Rhythm } from "@rhythmjs/rhythm";
 import { RhythmRouter } from "@rhythmjs/router";
 import { toFetchHandler } from "@rhythmjs/router/adapters/bun";
+import type { RhythmHttpContext } from "@rhythmjs/router/adapters/context";
 import { etag, type EtagOptions } from "./etag";
 
+const serve = (router: RhythmRouter) => toFetchHandler(new Rhythm<RhythmHttpContext>().use(router.routes()));
+
 const app = (body: string, options?: EtagOptions) =>
-  toFetchHandler(
+  serve(
     new RhythmRouter().use(etag(options)).get("/", (ctx) => {
       ctx.response.body = body;
     }),
@@ -53,7 +57,7 @@ describe("etag", () => {
   });
 
   test("skips non-2xx responses, non-string bodies, and pre-set etags", async () => {
-    const notFound = toFetchHandler(
+    const notFound = serve(
       new RhythmRouter().use(etag()).get("/", (ctx) => {
         ctx.response.status = 404;
         ctx.response.body = "missing";
@@ -61,14 +65,14 @@ describe("etag", () => {
     );
     expect((await notFound(new Request("http://localhost/"))).headers.get("etag")).toBeNull();
 
-    const empty = toFetchHandler(
+    const empty = serve(
       new RhythmRouter().use(etag()).get("/", (ctx) => {
         ctx.response.body = null;
       }),
     );
     expect((await empty(new Request("http://localhost/"))).headers.get("etag")).toBeNull();
 
-    const preset = toFetchHandler(
+    const preset = serve(
       new RhythmRouter().use(etag()).get("/", (ctx) => {
         ctx.response.headers.set("etag", '"custom"');
         ctx.response.body = "body";

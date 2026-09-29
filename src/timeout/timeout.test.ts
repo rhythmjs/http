@@ -1,13 +1,17 @@
 import { describe, expect, test } from "vite-plus/test";
+import { Rhythm } from "@rhythmjs/rhythm";
 import { RhythmRouter } from "@rhythmjs/router";
 import { toFetchHandler } from "@rhythmjs/router/adapters/bun";
+import type { RhythmHttpContext } from "@rhythmjs/router/adapters/context";
 import { timeout } from "./timeout";
+
+const serve = (router: RhythmRouter) => toFetchHandler(new Rhythm<RhythmHttpContext>().use(router.routes()));
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 describe("timeout", () => {
   test("responds 504 when downstream exceeds the deadline", async () => {
-    const app = toFetchHandler(
+    const app = serve(
       new RhythmRouter().use(timeout(20)).get("/slow", async (ctx) => {
         await sleep(200);
         ctx.response.body = "too late";
@@ -21,7 +25,7 @@ describe("timeout", () => {
   });
 
   test("passes fast responses through untouched", async () => {
-    const app = toFetchHandler(
+    const app = serve(
       new RhythmRouter().use(timeout(200)).get("/fast", (ctx) => {
         ctx.response.body = "quick";
       }),
@@ -34,7 +38,7 @@ describe("timeout", () => {
   });
 
   test("propagates downstream errors instead of converting them to 504", async () => {
-    const app = toFetchHandler(
+    const app = serve(
       new RhythmRouter().use(timeout(200)).get("/boom", () => {
         throw new Error("boom");
       }),
@@ -44,7 +48,7 @@ describe("timeout", () => {
   });
 
   test("applies per request, not once per middleware instance", async () => {
-    const app = toFetchHandler(
+    const app = serve(
       new RhythmRouter().use(timeout(50)).get("/ok", async (ctx) => {
         await sleep(5);
         ctx.response.body = "ok";

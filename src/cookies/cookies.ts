@@ -1,4 +1,4 @@
-import type { Middleware } from "@rhythmjs/rhythm";
+import type { DeriveMiddleware, Middleware } from "@rhythmjs/rhythm/types";
 import type { RhythmHttpContext } from "@rhythmjs/router/adapters/context";
 
 export interface CookieOptions {
@@ -74,9 +74,10 @@ export type CookiesContext = {
   cookies: Cookies;
 };
 
-export function cookies(): Middleware<RhythmHttpContext> {
-  return async (ctx, next) => {
-    const jar = new Cookies(parseCookies(ctx.request.headers.get("cookie")), ctx.response.headers);
-    await next({ cookies: jar } satisfies CookiesContext);
+export function cookies(): DeriveMiddleware<RhythmHttpContext, CookiesContext> {
+  const middleware: Middleware<RhythmHttpContext & Partial<CookiesContext>> = async (ctx, next) => {
+    ctx.cookies = new Cookies(parseCookies(ctx.request.headers.get("cookie")), ctx.response.headers);
+    await next();
   };
+  return middleware as DeriveMiddleware<RhythmHttpContext, CookiesContext>;
 }

@@ -1,4 +1,4 @@
-import type { Middleware } from "@rhythmjs/rhythm";
+import type { DeriveMiddleware, Middleware } from "@rhythmjs/rhythm/types";
 import type { RhythmHttpContext } from "@rhythmjs/router/adapters/context";
 
 export type SessionData = Record<string, unknown>;
@@ -67,7 +67,7 @@ function readCookie(header: string | null, name: string): string | undefined {
   return undefined;
 }
 
-export function session(options: SessionOptions = {}): Middleware<RhythmHttpContext> {
+export function session(options: SessionOptions = {}): DeriveMiddleware<RhythmHttpContext, SessionContext> {
   const store = options.store ?? new MemoryStore();
   const cookieName = options.cookieName ?? "sid";
   const maxAge = options.maxAge ?? 86400;
@@ -77,7 +77,7 @@ export function session(options: SessionOptions = {}): Middleware<RhythmHttpCont
   const secureAttribute = options.secure ? "; Secure" : "";
   const baseAttributes = `; Path=${path}; HttpOnly; SameSite=${sameSiteLabel}${secureAttribute}`;
 
-  return async (ctx, next) => {
+  const middleware: Middleware<RhythmHttpContext & Partial<SessionContext>> = async (ctx, next) => {
     const incomingId = readCookie(ctx.request.headers.get("cookie"), cookieName);
     const existing = incomingId === undefined ? undefined : await store.get(incomingId);
     const id = existing === undefined ? crypto.randomUUID() : (incomingId as string);
@@ -101,7 +101,8 @@ export function session(options: SessionOptions = {}): Middleware<RhythmHttpCont
       },
     };
 
-    await next({ session: current } satisfies SessionContext);
+    ctx.session = current;
+    await next();
 
     if (destroyed) {
       if (incomingId !== undefined) await store.delete(incomingId);
@@ -115,4 +116,5 @@ export function session(options: SessionOptions = {}): Middleware<RhythmHttpCont
       }
     }
   };
+  return middleware as DeriveMiddleware<RhythmHttpContext, SessionContext>;
 }

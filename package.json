@@ -8,6 +8,8 @@
     "cookies",
     "etag",
     "http",
+    "i18n",
+    "i18next",
     "middleware",
     "request-scope",
     "rhythm",
@@ -36,6 +38,10 @@
     "./etag": {
       "types": "./dist/etag/etag.d.ts",
       "default": "./dist/etag/etag.js"
+    },
+    "./i18n": {
+      "types": "./dist/i18n/i18n.d.ts",
+      "default": "./dist/i18n/i18n.js"
     },
     "./request-scope": {
       "types": "./dist/request-scope/request-scope.d.ts",
@@ -66,12 +72,19 @@
   },
   "devDependencies": {
     "@types/node": "^26.6.3",
+    "i18next": "^26.4.2",
     "typescript": "^7.0.2",
     "vite-plus": "^1.0.0"
   },
   "peerDependencies": {
     "@rhythmjs/rhythm": "^0.0.4",
-    "@rhythmjs/router": "^0.0.4"
+    "@rhythmjs/router": "^0.0.4",
+    "i18next": "*"
+  },
+  "peerDependenciesMeta": {
+    "i18next": {
+      "optional": true
+    }
   },
   "engines": {
     "node": ">=20.19.0"

@@ -77,6 +77,48 @@ new RhythmRouter().use(etag()).get("/report", (ctx) => {
 - `etag({ weak: true })` emits `W/"..."` tags.
 - Only successful (2xx) string bodies are tagged; a pre-set `ETag` is left alone.
 
+## `@rhythmjs/http/i18n`
+
+[i18next](https://www.i18next.com/) integration: detects the request language, exposes a
+request-scoped translator on the context, and sets the `Content-Language` response header. The
+middleware is typed and coupled structurally (`I18nInstanceLike`) rather than against i18next's own
+types — every instance capability (`cloneInstance`, `getFixedT`, `changeLanguage`, `init`) is
+feature-detected at runtime, so it works across i18next versions (optional peer dependency, any
+version) and with any compatible instance.
+
+```ts
+import i18next from "i18next";
+import { i18n, type I18nContext } from "@rhythmjs/http/i18n";
+
+await i18next.init({
+  supportedLngs: ["en", "de"],
+  fallbackLng: "en",
+  resources: {
+    en: { translation: { greeting: "Hello {{name}}" } },
+    de: { translation: { greeting: "Hallo {{name}}" } },
+  },
+});
+
+new RhythmRouter().use<I18nContext>(i18n({ i18next })).get("/greet", (ctx) => {
+  ctx.response.body = ctx.t("greeting", { name: "Ada" }); // "Hallo Ada" for ?lng=de
+});
+```
+
+- `ctx.t` — the instance's own `t` type bound to the detected language (a real i18next instance
+  keeps its full `TFunction` typing); `ctx.language` — the resolved language; `ctx.i18n` — a
+  request-scoped clone when the instance supports `cloneInstance` (safe for `changeLanguage` per
+  request), otherwise a `getFixedT`-based fallback.
+- Detection tries `?lng=` querystring, the `i18next` cookie, then `Accept-Language` (ordered by
+  quality, matched exactly or by base language against `supportedLngs`), falling back to
+  `fallbackLng`. Configure via `detection` — `order` (may include `"path"` for `/de/...`-style
+  prefixes with `lookupPath` as the segment index), `lookupQuerystring`, `lookupCookie`,
+  `supportedLanguages`, `fallbackLanguage`.
+- `cacheCookie: true` persists the resolved language in the detection cookie
+  (`cacheCookieMaxAge` seconds, default one year); `contentLanguage: false` disables the response
+  header. An uninitialized instance is initialized on first request.
+- The standalone `detectLanguage(request, options?)` and `parseAcceptLanguage(header)` helpers are
+  exported too.
+
 ## `@rhythmjs/http/timeout`
 
 Fails requests that exceed a deadline with `504 { "success": false, "status": 504, "message": "Gateway Timeout" }`.

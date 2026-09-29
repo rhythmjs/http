@@ -5,12 +5,12 @@ import { toFetchHandler } from "@rhythmjs/router/adapters/bun";
 import type { RhythmHttpContext } from "@rhythmjs/router/adapters/context";
 import { MemoryStore, session, type SessionContext, type SessionData, type SessionOptions } from "./session";
 
-const serve = (router: RhythmRouter<any>) => toFetchHandler(new Rhythm<RhythmHttpContext>().use(router.routes()));
+const serve = (router: RhythmRouter<any>) => toFetchHandler(new Rhythm<RhythmHttpContext>().use(router.middleware()));
 
 const app = (options?: SessionOptions) =>
   serve(
     new RhythmRouter()
-      .use<SessionContext>(session(options))
+      .use(session(options))
       .get("/read", (ctx) => {
         ctx.response.body = JSON.stringify({ id: ctx.session.id, user: ctx.session.get("user") ?? null });
       })

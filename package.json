@@ -1,6 +1,6 @@
 {
   "name": "@rhythmjs/http",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "HTTP utility middleware (cookies, sessions, etag, timeout, body limit) for Rhythm routers and handlers.",
   "keywords": [
     "body-limit",

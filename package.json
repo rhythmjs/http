@@ -1,6 +1,6 @@
 {
   "name": "@rhythmjs/http",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "HTTP utility middleware (cookies, sessions, etag, timeout, body limit) for Rhythm routers and handlers.",
   "keywords": [
     "async-local-storage",
@@ -77,8 +77,8 @@
     "vite-plus": "^1.0.0"
   },
   "peerDependencies": {
-    "@rhythmjs/rhythm": "^0.0.4",
-    "@rhythmjs/router": "^0.0.4",
+    "@rhythmjs/rhythm": "^0.0.5",
+    "@rhythmjs/router": "^0.0.5",
     "i18next": "*"
   },
   "peerDependenciesMeta": {

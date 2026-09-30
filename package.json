@@ -1,10 +1,13 @@
 {
   "name": "@rhythmjs/http",
   "version": "0.0.5",
-  "description": "HTTP utility middleware (cookies, sessions, etag, sse, streaming, multipart, timeout, body limit) for Rhythm routers and handlers.",
+  "description": "HTTP utility middleware (cookies, sessions, caching, etag, compression, sse, streaming, multipart, timeout, body limit) for Rhythm routers and handlers.",
   "keywords": [
     "async-local-storage",
     "body-limit",
+    "cache",
+    "cache-control",
+    "compression",
     "cookies",
     "etag",
     "http",
@@ -34,6 +37,14 @@
     "./body-limit": {
       "types": "./dist/body-limit/body-limit.d.ts",
       "default": "./dist/body-limit/body-limit.js"
+    },
+    "./cache": {
+      "types": "./dist/cache/cache.d.ts",
+      "default": "./dist/cache/cache.js"
+    },
+    "./compress": {
+      "types": "./dist/compress/compress.d.ts",
+      "default": "./dist/compress/compress.js"
     },
     "./cookies": {
       "types": "./dist/cookies/cookies.d.ts",

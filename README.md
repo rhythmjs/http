@@ -57,9 +57,9 @@ new RhythmRouter()
 - The session cookie (`sid` by default; `HttpOnly`, `SameSite=Lax`, `Path=/`) is only written when the
   session is first used, and `destroy()` deletes the stored session and expires the cookie. Unknown or
   expired session ids get a fresh session — the cookie value is never trusted as-is.
-- `SessionOptions` — `store` (any `SessionStore` implementation; the bundled `MemoryStore` by default,
-  suitable for a single process), `cookieName`, `maxAge` (seconds, default 86400), `path`, `secure`,
-  `sameSite`.
+- `SessionOptions` — `store` (any object satisfying `SessionStore`; the bundled `memorySessionStore()`
+  by default, suitable for a single process), `cookieName`, `maxAge` (seconds, default 86400), `path`,
+  `secure`, `sameSite`.
 
 ## `@rhythmjs/http/etag`
 
@@ -76,6 +76,65 @@ new RhythmRouter().use(etag()).get("/report", (ctx) => {
 
 - `etag({ weak: true })` emits `W/"..."` tags.
 - Only successful (2xx) string bodies are tagged; a pre-set `ETag` is left alone.
+
+## `@rhythmjs/http/cache`
+
+Server-side response caching plus a typed `Cache-Control` builder.
+
+```ts
+import { cache, cacheControl } from "@rhythmjs/http/cache";
+
+new RhythmRouter()
+  .use(cacheControl({ public: true, maxAge: 300, staleWhileRevalidate: 60 }))
+  .use(cache({ ttl: 60 }))
+  .get("/api/data", (ctx) => {
+    ctx.json(expensiveResult());
+  });
+```
+
+- `cacheControl(options)` — sets `Cache-Control` from typed directives (`maxAge`, `sMaxAge`,
+  `staleWhileRevalidate`, `staleIfError`, `public`, `private`, `noCache`, `noStore`, `mustRevalidate`,
+  `immutable`) unless the handler already set one. `formatCacheControl(options)` exposes the string
+  builder on its own.
+- `cache(options)` — caches `200` responses to `GET`/`HEAD` requests and replays them without running
+  the handler, with `X-Cache: HIT`/`MISS` and an `Age` header on hits. It never caches responses marked
+  `no-store`/`private`, `text/event-stream`, or `Vary: *`; stream bodies are buffered when stored.
+
+`CacheOptions`:
+
+- `ttl` — seconds an entry stays fresh (default `60`).
+- `store` — any object satisfying `CacheStore` (`get(key)`, `set(key, entry, ttl)`, `delete(key)`;
+  sync or async, entries are plain `{ status, headers, body, storedAt }` data). Defaults to
+  `memoryCacheStore()`; back it with Redis etc. to share across processes, and invalidate with
+  `store.delete(key)`.
+- `keyOf(request)` — cache key (default `METHOD path?query`).
+- `vary` — request header names folded into the key (e.g. `["accept-language"]`).
+- `filter(ctx)` — veto caching per response.
+
+## `@rhythmjs/http/compress`
+
+Response compression on the web-standard `CompressionStream` — no dependencies, works on every runtime
+the router adapters support. Negotiates `gzip` / `deflate` against the request's `Accept-Encoding`
+(respecting `;q=0`) and pipes the response body through the winner.
+
+```ts
+import { compress } from "@rhythmjs/http/compress";
+
+new RhythmRouter().use(compress()).get("/api/data", (ctx) => {
+  ctx.json(bigPayload);
+});
+```
+
+Options (`CompressOptions`):
+
+- `threshold` — minimum body size in bytes for buffered bodies (default `1024`); streams are always
+  compressed since their size is unknown.
+- `encodings` — preference order offered to the client (default `["gzip", "deflate"]`).
+- `filter(contentType)` — replace the default compressible-type check (`text/*`, JSON, JavaScript, XML,
+  SVG, wasm).
+- It never touches responses that are `204`/`304`, empty, already `Content-Encoding`-ed,
+  `text/event-stream` (compressing SSE buffers events), or non-compressible types, and it appends
+  `Vary: Accept-Encoding` wherever negotiation applies.
 
 ## `@rhythmjs/http/i18n`
 

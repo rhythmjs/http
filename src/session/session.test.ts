@@ -3,7 +3,7 @@ import { Rhythm } from "@rhythmjs/rhythm";
 import { RhythmRouter } from "@rhythmjs/router";
 import { toFetchHandler } from "@rhythmjs/router/fetch";
 import type { RhythmHttpContext } from "@rhythmjs/router/adapters/context";
-import { MemoryStore, session, type SessionData, type SessionOptions } from "./session";
+import { memorySessionStore, session, type SessionData, type SessionOptions } from "./session";
 
 const serve = (router: RhythmRouter<any>) => toFetchHandler(new Rhythm<RhythmHttpContext>().use(router.middleware()));
 
@@ -113,12 +113,12 @@ describe("session", () => {
     expect(backing.size).toBe(0);
   });
 
-  test("MemoryStore expires entries after maxAge", () => {
-    const store = new MemoryStore();
-    store.set("a", { user: "ada" }, 60);
-    expect(store.get("a")).toEqual({ user: "ada" });
+  test("memorySessionStore expires entries after maxAge", async () => {
+    const store = memorySessionStore();
+    await store.set("a", { user: "ada" }, 60);
+    expect(await store.get("a")).toEqual({ user: "ada" });
 
-    store.set("b", { user: "grace" }, -1);
-    expect(store.get("b")).toBeUndefined();
+    await store.set("b", { user: "grace" }, -1);
+    expect(await store.get("b")).toBeUndefined();
   });
 });

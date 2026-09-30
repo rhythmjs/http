@@ -4,6 +4,8 @@ export default defineConfig({
   pack: {
     entry: {
       "body-limit/body-limit": "src/body-limit/body-limit.ts",
+      "cache/cache": "src/cache/cache.ts",
+      "compress/compress": "src/compress/compress.ts",
       "cookies/cookies": "src/cookies/cookies.ts",
       "etag/etag": "src/etag/etag.ts",
       "i18n/i18n": "src/i18n/i18n.ts",

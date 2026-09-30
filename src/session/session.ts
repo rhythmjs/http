@@ -9,26 +9,26 @@ export interface SessionStore {
   delete(id: string): Promise<void> | void;
 }
 
-export class MemoryStore implements SessionStore {
-  #entries = new Map<string, { data: SessionData; expires: number }>();
+export function memorySessionStore(): SessionStore {
+  const entries = new Map<string, { data: SessionData; expires: number }>();
 
-  get(id: string): SessionData | undefined {
-    const entry = this.#entries.get(id);
-    if (!entry) return undefined;
-    if (entry.expires <= Date.now()) {
-      this.#entries.delete(id);
-      return undefined;
-    }
-    return entry.data;
-  }
-
-  set(id: string, data: SessionData, maxAge: number): void {
-    this.#entries.set(id, { data, expires: Date.now() + maxAge * 1000 });
-  }
-
-  delete(id: string): void {
-    this.#entries.delete(id);
-  }
+  return {
+    get(id: string): SessionData | undefined {
+      const entry = entries.get(id);
+      if (!entry) return undefined;
+      if (entry.expires <= Date.now()) {
+        entries.delete(id);
+        return undefined;
+      }
+      return entry.data;
+    },
+    set(id: string, data: SessionData, maxAge: number): void {
+      entries.set(id, { data, expires: Date.now() + maxAge * 1000 });
+    },
+    delete(id: string): void {
+      entries.delete(id);
+    },
+  };
 }
 
 export interface Session {
@@ -68,7 +68,7 @@ function readCookie(header: string | null, name: string): string | undefined {
 }
 
 export function session(options: SessionOptions = {}): DeriveMiddleware<RhythmHttpContext, SessionContext> {
-  const store = options.store ?? new MemoryStore();
+  const store = options.store ?? memorySessionStore();
   const cookieName = options.cookieName ?? "sid";
   const maxAge = options.maxAge ?? 86400;
   const path = options.path ?? "/";

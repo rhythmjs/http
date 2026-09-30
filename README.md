@@ -283,6 +283,51 @@ new RhythmRouter().post("/upload", multipart({ maxBytes: 10_000_000, maxFiles: 3
   the single-use body stream. Fields and files are held in memory — set `maxBytes` in production, and
   keep streaming-to-disk uploads out of scope for this module.
 
+## `@rhythmjs/http/proxy`
+
+A reverse proxy on plain `fetch` and web streams — cross-runtime, no dependencies, request and
+response bodies streamed without buffering. The semantics follow
+[h3's proxy utilities](https://h3.dev/utils/proxy) (h3 and Rhythm share the srvx foundation), ported
+to Rhythm's middleware shape.
+
+```ts
+import { proxy } from "@rhythmjs/http/proxy";
+
+new RhythmRouter({ prefix: "/api" }).use(
+  proxy({ target: "http://api.internal:8080", rewrite: (path) => path.replace(/^\/api/, "") }),
+);
+```
+
+The middleware owns the request (it never calls `next()`): the target URL is the `target` base plus
+the (rewritten) path and query, and the upstream response is relayed back status-and-all.
+
+Options (`ProxyOptions`):
+
+- `target` — upstream base URL. `rewrite(path)` — adjust the forwarded path.
+- `headers` — extra upstream headers; they win over everything.
+- **Header hygiene** (h3's two-tier model): hop-by-hop framing headers (`connection`, `te`,
+  `upgrade`, `proxy-authorization`, …) and `Connection`-nominated fields are always dropped both
+  directions. Soft drops (`host`, `accept-encoding`, `expect`) can be restored via
+  `forwardHeaders`; `accept-encoding` is dropped because `fetch` transparently decompresses — which
+  is also why stale `content-encoding`/`content-length` are stripped from the response.
+- `filterHeaders` — extra request headers to strip. `Cookie` and `Authorization` are forwarded by
+  default (correct for a same-trust upstream); strip them here when proxying to an upstream you
+  don't fully trust.
+- `xfwd` (default `true`) — anti-spoofing `x-forwarded-*`: the client IP (srvx `request.ip`) is
+  **appended** to the inbound `x-forwarded-for` chain, while `proto`/`host`/`port` are overwritten
+  with server-resolved values so a client-supplied value never reaches the upstream.
+- `redirect` (default `"manual"`) — upstream 3xx passes through to the client;
+  `locationRewrite` (default `true`) rewrites `Location`/`Refresh` URLs pointing at the target
+  origin back to the proxy's origin (or takes a `{ prefix: replacement }` map, nginx
+  `proxy_redirect`-style).
+- `cookieDomainRewrite` / `cookiePathRewrite` — rewrite `Set-Cookie` `Domain`/`Path` (a string for
+  all, or a `{ value: replacement }` map; empty string removes the attribute).
+- `timeout` — ms to wait for upstream headers, then `504`; an unreachable upstream is `502`, a
+  client disconnect `499`, all in the package's standard JSON error shape.
+- `fetch` — injectable transport (tests, custom agents).
+- Compose with `@rhythmjs/http/body-limit` in front when proxying untrusted input, and mount auth
+  middleware before it like any other route.
+
 ## `@rhythmjs/http/request-scope`
 
 Opens a per-request scope (backed by

@@ -1,7 +1,7 @@
 {
   "name": "@rhythmjs/http",
   "version": "0.0.5",
-  "description": "HTTP utility middleware (cookies, sessions, caching, etag, compression, sse, streaming, multipart, timeout, body limit) for Rhythm routers and handlers.",
+  "description": "HTTP utility middleware (cookies, sessions, caching, etag, compression, sse, streaming, multipart, proxy, timeout, body limit) for Rhythm routers and handlers.",
   "keywords": [
     "async-local-storage",
     "body-limit",
@@ -15,7 +15,9 @@
     "i18next",
     "middleware",
     "multipart",
+    "proxy",
     "request-scope",
+    "reverse-proxy",
     "rhythm",
     "server-sent-events",
     "session",
@@ -61,6 +63,10 @@
     "./multipart": {
       "types": "./dist/multipart/multipart.d.ts",
       "default": "./dist/multipart/multipart.js"
+    },
+    "./proxy": {
+      "types": "./dist/proxy/proxy.d.ts",
+      "default": "./dist/proxy/proxy.js"
     },
     "./request-scope": {
       "types": "./dist/request-scope/request-scope.d.ts",

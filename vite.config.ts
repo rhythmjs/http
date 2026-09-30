@@ -10,6 +10,7 @@ export default defineConfig({
       "etag/etag": "src/etag/etag.ts",
       "i18n/i18n": "src/i18n/i18n.ts",
       "multipart/multipart": "src/multipart/multipart.ts",
+      "proxy/proxy": "src/proxy/proxy.ts",
       "request-scope/request-scope": "src/request-scope/request-scope.ts",
       "session/session": "src/session/session.ts",
       "sse/sse": "src/sse/sse.ts",

@@ -1,7 +1,9 @@
 # @rhythmjs/http
 
-HTTP utility middleware for [Rhythm](https://github.com/rhythmjs/rhythm) routers and handlers. Each module
-is exported by its own subpath — there is no root barrel export.
+HTTP utility middleware for [Rhythm](https://github.com/rhythmjs/rhythm), the Bun-native backend
+framework: cookies, sessions, ETags, caching, compression, i18n, SSE and streaming, timeouts, body
+limits, multipart uploads, reverse proxying, and request scoping for `@rhythmjs/router` handlers.
+Each module is exported by its own subpath — there is no root barrel export.
 
 ## Install
 
@@ -373,8 +375,7 @@ function greeting() {
 - Naming convention: bare accessors (`context()`, `get()`, `set()`, …) throw `RequestScopeError` when no
   scope is active; `contextOrNull()` and `isActive()` never throw, for code that runs both inside and
   outside requests.
-- Requires an `AsyncLocalStorage`-capable runtime: Node.js, Bun, and Deno work out of the box; on
-  Cloudflare Workers enable the `nodejs_compat` (or `nodejs_als`) compatibility flag.
+- Built on `AsyncLocalStorage`, which Bun supports natively — no setup needed.
 
 ## Development
 

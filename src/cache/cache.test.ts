@@ -42,6 +42,20 @@ const counterApp = (options?: CacheOptions) => {
         hits += 1;
         ctx.response.headers.set("content-type", "text/event-stream");
         ctx.response.body = "data: x\n\n";
+      })
+      .get("/login", (ctx) => {
+        hits += 1;
+        ctx.response.headers.set("set-cookie", `sid=${hits}; HttpOnly`);
+        ctx.json({ hits });
+      })
+      .get("/shared", (ctx) => {
+        hits += 1;
+        ctx.response.headers.set("cache-control", "public, max-age=60");
+        ctx.json({ hits });
+      })
+      .get("/stream", (ctx) => {
+        hits += 1;
+        ctx.response.body = new Response("streamed").body;
       }),
   );
   return { handler, handled: () => hits };
@@ -112,6 +126,50 @@ describe("cache", () => {
     expect(handled()).toBe(2);
   });
 
+  test("never caches responses that set cookies", async () => {
+    const { handler, handled } = counterApp();
+
+    const first = await handler(get("/login"));
+    const second = await handler(get("/login"));
+
+    expect(first.headers.get("set-cookie")).toBe("sid=1; HttpOnly");
+    expect(second.headers.get("set-cookie")).toBe("sid=2; HttpOnly");
+    expect(second.headers.get("x-cache")).toBe("MISS");
+    expect(handled()).toBe(2);
+  });
+
+  test("does not cache authorized requests unless the response opts in", async () => {
+    const { handler, handled } = counterApp();
+
+    await handler(get("/data", { authorization: "Bearer token" }));
+    const res = await handler(get("/data", { authorization: "Bearer token" }));
+
+    expect(res.headers.get("x-cache")).toBe("MISS");
+    expect(handled()).toBe(2);
+  });
+
+  test("caches authorized requests when the response is explicitly public", async () => {
+    const { handler, handled } = counterApp();
+
+    await handler(get("/shared", { authorization: "Bearer token" }));
+    const res = await handler(get("/shared", { authorization: "Bearer token" }));
+
+    expect(res.headers.get("x-cache")).toBe("HIT");
+    expect(handled()).toBe(1);
+  });
+
+  test("passes streamed bodies through without caching them", async () => {
+    const { handler, handled } = counterApp();
+
+    const first = await handler(get("/stream"));
+    expect(await first.text()).toBe("streamed");
+
+    const second = await handler(get("/stream"));
+    expect(await second.text()).toBe("streamed");
+    expect(second.headers.get("x-cache")).toBe("MISS");
+    expect(handled()).toBe(2);
+  });
+
   test("vary splits entries by the named request headers", async () => {
     const { handler, handled } = counterApp({ vary: ["accept-language"] });
 
@@ -174,6 +232,28 @@ describe("memoryCacheStore", () => {
     await store.set("b", entry, 0.03);
     await sleep(50);
     expect(await store.get("b")).toBeUndefined();
+  });
+
+  test("evicts the least recently used entry at maxEntries", async () => {
+    const store = memoryCacheStore({ maxEntries: 2 });
+    const entry: CacheEntry = { status: 200, headers: [], body: new Uint8Array([1]), storedAt: Date.now() };
+
+    await store.set("a", entry, 60);
+    await store.set("b", entry, 60);
+    await store.get("a");
+    await store.set("c", entry, 60);
+
+    expect(await store.get("a")).toEqual(entry);
+    expect(await store.get("b")).toBeUndefined();
+    expect(await store.get("c")).toEqual(entry);
+  });
+
+  test("refuses entries larger than maxEntryBytes", async () => {
+    const store = memoryCacheStore({ maxEntryBytes: 4 });
+    const entry: CacheEntry = { status: 200, headers: [], body: new Uint8Array(5), storedAt: Date.now() };
+
+    await store.set("big", entry, 60);
+    expect(await store.get("big")).toBeUndefined();
   });
 });
 

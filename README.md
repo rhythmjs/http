@@ -103,15 +103,19 @@ new RhythmRouter()
   builder on its own.
 - `cache(options)`: caches `200` responses to `GET`/`HEAD` requests and replays them without running
   the handler, with `X-Cache: HIT`/`MISS` and an `Age` header on hits. It never caches responses marked
-  `no-store`/`private`, `text/event-stream`, or `Vary: *`; stream bodies are buffered when stored.
+  `no-store`/`private`, `text/event-stream`, `Vary: *`, responses that carry `Set-Cookie`, stream
+  bodies, or responses to requests with `Authorization` unless the response opts in with `public`,
+  `s-maxage`, or `must-revalidate` (RFC 9111 §3.5) — a shared cache must not replay one user's
+  response to another.
 
 `CacheOptions`:
 
 - `ttl`: seconds an entry stays fresh (default `60`).
 - `store`: any object satisfying `CacheStore` (`get(key)`, `set(key, entry, ttl)`, `delete(key)`;
   sync or async, entries are plain `{ status, headers, body, storedAt }` data). Defaults to
-  `memoryCacheStore()`; back it with Redis etc. to share across processes, and invalidate with
-  `store.delete(key)`.
+  `memoryCacheStore()`, an LRU capped at `maxEntries` (default `1024`) entries of at most
+  `maxEntryBytes` (default 1 MiB) each, so unique-URL floods cannot grow memory without bound; back
+  it with Redis etc. to share across processes, and invalidate with `store.delete(key)`.
 - `keyOf(request)`: cache key (default `METHOD path?query`).
 - `vary`: request header names folded into the key (e.g. `["accept-language"]`).
 - `filter(ctx)`: veto caching per response.

@@ -52,7 +52,14 @@ export interface CacheStore {
   delete(key: string): Promise<void> | void;
 }
 
-export function memoryCacheStore(): CacheStore {
+export interface MemoryCacheStoreOptions {
+  maxEntries?: number;
+  maxEntryBytes?: number;
+}
+
+export function memoryCacheStore(options: MemoryCacheStoreOptions = {}): CacheStore {
+  const maxEntries = options.maxEntries ?? 1024;
+  const maxEntryBytes = options.maxEntryBytes ?? 1024 * 1024;
   const entries = new Map<string, { entry: CacheEntry; expires: number }>();
   let nextSweep = 0;
 
@@ -64,13 +71,22 @@ export function memoryCacheStore(): CacheStore {
         entries.delete(key);
         return undefined;
       }
+      entries.delete(key);
+      entries.set(key, cached);
       return cached.entry;
     },
     set(key: string, entry: CacheEntry, ttl: number): void {
+      if (entry.body.byteLength > maxEntryBytes) return;
       const now = Date.now();
       if (now >= nextSweep) {
         for (const [id, cached] of entries) if (cached.expires <= now) entries.delete(id);
         nextSweep = now + ttl * 1000;
+      }
+      entries.delete(key);
+      while (entries.size >= maxEntries) {
+        const oldest = entries.keys().next().value;
+        if (oldest === undefined) break;
+        entries.delete(oldest);
       }
       entries.set(key, { entry, expires: now + ttl * 1000 });
     },
@@ -90,6 +106,7 @@ export interface CacheOptions {
 
 const CACHEABLE_METHODS = new Set(["GET", "HEAD"]);
 const UNCACHEABLE_CONTROL = /\b(no-store|private)\b/i;
+const AUTHORIZED_CACHEABLE = /\b(public|s-maxage|must-revalidate)\b/i;
 
 function defaultKey(request: Request): string {
   const url = new URL(request.url);
@@ -139,7 +156,14 @@ export function cache(options: CacheOptions = {}): Middleware<RhythmHttpContext>
     if (UNCACHEABLE_CONTROL.test(response.headers.get("cache-control") ?? "")) return;
     if (/^text\/event-stream\b/i.test(response.headers.get("content-type") ?? "")) return;
     if (response.headers.get("vary")?.includes("*")) return;
+    if (response.headers.has("set-cookie")) return;
+    if (
+      ctx.request.headers.has("authorization") &&
+      !AUTHORIZED_CACHEABLE.test(response.headers.get("cache-control") ?? "")
+    )
+      return;
     if (response.body instanceof FormData || response.body instanceof URLSearchParams) return;
+    if (response.body instanceof ReadableStream) return;
     if (filter !== undefined && !(await filter(ctx))) return;
 
     const body = await bufferBody(response);

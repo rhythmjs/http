@@ -1,9 +1,7 @@
 import type { DeriveMiddleware, Middleware } from "@rhythmjs/rhythm/types";
 import type { RhythmHttpContext } from "@rhythmjs/router/adapters/context";
 
-/** The form-data shape `request.formData()` actually returns (undici's under `@types/node`). */
 export type RequestFormData = Awaited<ReturnType<Request["formData"]>>;
-/** The file entry type of that form data. */
 export type FormFile = Exclude<ReturnType<RequestFormData["get"]>, string | null>;
 
 export interface MultipartOptions {

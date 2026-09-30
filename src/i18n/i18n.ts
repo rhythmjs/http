@@ -12,9 +12,6 @@ export interface LanguageDetectionOptions {
   fallbackLanguage?: string;
 }
 
-// Structural contract instead of i18next's own types: every member is optional except `t`, and the
-// middleware feature-detects each one at runtime, so i18next major versions that add, rename, or
-// drop members (e.g. v26 removing `initImmediate`) cannot break compilation or runtime behavior.
 export interface I18nInstanceLike {
   t: (...args: any[]) => any;
   isInitialized?: boolean;

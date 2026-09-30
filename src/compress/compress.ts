@@ -50,10 +50,6 @@ function toStream(
   return new Response(body).body!;
 }
 
-// Bun's native compressors handle gzip and zstd synchronously for buffered
-// bodies. HTTP "deflate" means zlib-wrapped, which Bun.deflateSync does not
-// produce, so deflate always goes through CompressionStream — as do streams,
-// which CompressionStream handles but zstd cannot.
 const compressSync: Partial<Record<CompressEncoding, (data: Uint8Array<ArrayBuffer>) => Uint8Array>> = {
   gzip: (data) => Bun.gzipSync(data),
   zstd: (data) => Bun.zstdCompressSync(data),

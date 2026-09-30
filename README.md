@@ -3,7 +3,7 @@
 HTTP utility middleware for [Rhythm](https://github.com/rhythmjs/rhythm), the Bun-native backend
 framework: cookies, sessions, ETags, caching, compression, i18n, SSE and streaming, timeouts, body
 limits, multipart uploads, reverse proxying, and request scoping for `@rhythmjs/router` handlers.
-Each module is exported by its own subpath — there is no root barrel export.
+Each module is exported by its own subpath; there is no root barrel export.
 
 ## Install
 
@@ -28,10 +28,10 @@ new RhythmRouter().use<CookiesContext>(cookies()).get("/", (ctx) => {
 });
 ```
 
-- `ctx.cookies` — `get(name)`, `has(name)`, `getAll()`, `set(name, value, options?)`, and
+- `ctx.cookies`: `get(name)`, `has(name)`, `getAll()`, `set(name, value, options?)`, and
   `delete(name)` (sets `Max-Age=0`). Multiple `set()` calls emit separate `Set-Cookie` headers.
   Bun's serialization defaults apply: `Path=/` and `SameSite=Lax`.
-- `CookieOptions` — Bun's `CookieInit` attributes: `domain`, `expires`, `httpOnly`, `maxAge`, `path`,
+- `CookieOptions`: Bun's `CookieInit` attributes; `domain`, `expires`, `httpOnly`, `maxAge`, `path`,
   `sameSite`, `secure`, `partitioned`.
 - The standalone `parseCookies(header)` and `serializeCookie(name, value, options?)` helpers are exported
   too, both on the native primitives.
@@ -58,11 +58,11 @@ new RhythmRouter()
   });
 ```
 
-- `ctx.session` — `id`, `get(key)`, `set(key, value)`, `delete(key)`, `destroy()`.
+- `ctx.session`: `id`, `get(key)`, `set(key, value)`, `delete(key)`, `destroy()`.
 - The session cookie (`sid` by default; `HttpOnly`, `SameSite=Lax`, `Path=/`) is only written when the
   session is first used, and `destroy()` deletes the stored session and expires the cookie. Unknown or
-  expired session ids get a fresh session — the cookie value is never trusted as-is.
-- `SessionOptions` — `store` (any object satisfying `SessionStore`; the bundled `memorySessionStore()`
+  expired session ids get a fresh session; the cookie value is never trusted as-is.
+- `SessionOptions`: `store` (any object satisfying `SessionStore`; the bundled `memorySessionStore()`
   by default, suitable for a single process), `cookieName`, `maxAge` (seconds, default 86400), `path`,
   `secure`, `sameSite`.
 
@@ -97,31 +97,31 @@ new RhythmRouter()
   });
 ```
 
-- `cacheControl(options)` — sets `Cache-Control` from typed directives (`maxAge`, `sMaxAge`,
+- `cacheControl(options)`: sets `Cache-Control` from typed directives (`maxAge`, `sMaxAge`,
   `staleWhileRevalidate`, `staleIfError`, `public`, `private`, `noCache`, `noStore`, `mustRevalidate`,
   `immutable`) unless the handler already set one. `formatCacheControl(options)` exposes the string
   builder on its own.
-- `cache(options)` — caches `200` responses to `GET`/`HEAD` requests and replays them without running
+- `cache(options)`: caches `200` responses to `GET`/`HEAD` requests and replays them without running
   the handler, with `X-Cache: HIT`/`MISS` and an `Age` header on hits. It never caches responses marked
   `no-store`/`private`, `text/event-stream`, or `Vary: *`; stream bodies are buffered when stored.
 
 `CacheOptions`:
 
-- `ttl` — seconds an entry stays fresh (default `60`).
-- `store` — any object satisfying `CacheStore` (`get(key)`, `set(key, entry, ttl)`, `delete(key)`;
+- `ttl`: seconds an entry stays fresh (default `60`).
+- `store`: any object satisfying `CacheStore` (`get(key)`, `set(key, entry, ttl)`, `delete(key)`;
   sync or async, entries are plain `{ status, headers, body, storedAt }` data). Defaults to
   `memoryCacheStore()`; back it with Redis etc. to share across processes, and invalidate with
   `store.delete(key)`.
-- `keyOf(request)` — cache key (default `METHOD path?query`).
-- `vary` — request header names folded into the key (e.g. `["accept-language"]`).
-- `filter(ctx)` — veto caching per response.
+- `keyOf(request)`: cache key (default `METHOD path?query`).
+- `vary`: request header names folded into the key (e.g. `["accept-language"]`).
+- `filter(ctx)`: veto caching per response.
 
 ## `@rhythmjs/http/compress`
 
-Response compression on Bun's native compressors — no dependencies. Negotiates `zstd` / `gzip` /
+Response compression on Bun's native compressors, with no dependencies. Negotiates `zstd` / `gzip` /
 `deflate` against the request's `Accept-Encoding` (respecting `;q=0`): buffered bodies go through
 `Bun.zstdCompressSync` / `Bun.gzipSync` synchronously, streams pipe through `CompressionStream`
-(which is why a streaming body never picks `zstd`, and `deflate` — zlib-wrapped per RFC 9110 —
+(which is why a streaming body never picks `zstd`, and `deflate`, zlib-wrapped per RFC 9110,
 always streams).
 
 ```ts
@@ -134,10 +134,10 @@ new RhythmRouter().use(compress()).get("/api/data", (ctx) => {
 
 Options (`CompressOptions`):
 
-- `threshold` — minimum body size in bytes for buffered bodies (default `1024`); streams are always
+- `threshold`: minimum body size in bytes for buffered bodies (default `1024`); streams are always
   compressed since their size is unknown.
-- `encodings` — preference order offered to the client (default `["zstd", "gzip", "deflate"]`).
-- `filter(contentType)` — replace the default compressible-type check (`text/*`, JSON, JavaScript, XML,
+- `encodings`: preference order offered to the client (default `["zstd", "gzip", "deflate"]`).
+- `filter(contentType)`: replace the default compressible-type check (`text/*`, JSON, JavaScript, XML,
   SVG, wasm).
 - It never touches responses that are `204`/`304`, empty, already `Content-Encoding`-ed,
   `text/event-stream` (compressing SSE buffers events), or non-compressible types, and it appends
@@ -148,7 +148,7 @@ Options (`CompressOptions`):
 [i18next](https://www.i18next.com/) integration: detects the request language, exposes a
 request-scoped translator on the context, and sets the `Content-Language` response header. The
 middleware is typed and coupled structurally (`I18nInstanceLike`) rather than against i18next's own
-types — every instance capability (`cloneInstance`, `getFixedT`, `changeLanguage`, `init`) is
+types: every instance capability (`cloneInstance`, `getFixedT`, `changeLanguage`, `init`) is
 feature-detected at runtime, so it works across i18next versions (optional peer dependency, any
 version) and with any compatible instance.
 
@@ -170,13 +170,13 @@ new RhythmRouter().use<I18nContext>(i18n({ i18next })).get("/greet", (ctx) => {
 });
 ```
 
-- `ctx.t` — the instance's own `t` type bound to the detected language (a real i18next instance
-  keeps its full `TFunction` typing); `ctx.language` — the resolved language; `ctx.i18n` — a
+- `ctx.t`: the instance's own `t` type bound to the detected language (a real i18next instance
+  keeps its full `TFunction` typing); `ctx.language`: the resolved language; `ctx.i18n`: a
   request-scoped clone when the instance supports `cloneInstance` (safe for `changeLanguage` per
   request), otherwise a `getFixedT`-based fallback.
 - Detection tries `?lng=` querystring, the `i18next` cookie, then `Accept-Language` (ordered by
   quality, matched exactly or by base language against `supportedLngs`), falling back to
-  `fallbackLng`. Configure via `detection` — `order` (may include `"path"` for `/de/...`-style
+  `fallbackLng`. Configure via `detection`: `order` (may include `"path"` for `/de/...`-style
   prefixes with `lookupPath` as the segment index), `lookupQuerystring`, `lookupCookie`,
   `supportedLanguages`, `fallbackLanguage`.
 - `cacheCookie: true` persists the resolved language in the detection cookie
@@ -188,7 +188,7 @@ new RhythmRouter().use<I18nContext>(i18n({ i18next })).get("/greet", (ctx) => {
 ## `@rhythmjs/http/sse`
 
 Route middleware that applies the Server-Sent Events response headers. The handler owns the body:
-assign any `ReadableStream` of SSE frames — driven by a writer, a generator, an observable bridge, or
+assign any `ReadableStream` of SSE frames, driven by a writer, a generator, an observable bridge, or
 anything else.
 
 ```ts
@@ -208,14 +208,14 @@ new RhythmRouter().get("/events", sse(), (ctx) => {
 - Defaults, each applied only if absent after the handler runs: `content-type: text/event-stream`,
   `cache-control: no-cache, no-transform`, `connection: keep-alive`, `x-accel-buffering: no`
   (disables nginx proxy buffering). Headers set by the handler or by other middleware win over them.
-- `SseOptions.headers` — extra headers that override everything, including handler-set values.
+- `SseOptions.headers`: extra headers that override everything, including handler-set values.
 - Every server adapter streams `ReadableStream` bodies with backpressure; `ctx.request.signal` aborts
   on client disconnect, so producers can stop cleanly. The body streams after the middleware chain
   resolves, so after-`next()` middleware sees time-to-headers, not the lifetime of the stream.
 
 ## `@rhythmjs/http/stream`
 
-Route middleware that applies plain streaming response headers — the non-SSE sibling of
+Route middleware that applies plain streaming response headers, the non-SSE sibling of
 `@rhythmjs/http/sse`. The handler owns the body: assign any `ReadableStream` (progressive text,
 NDJSON, LLM tokens, proxied upstream bodies).
 
@@ -231,7 +231,7 @@ new RhythmRouter().get("/report", stream(), (ctx) => {
   `cache-control: no-cache, no-transform`, `connection: keep-alive`, `x-accel-buffering: no`, and
   `x-content-type-options: nosniff` (stops browsers sniffing the stream into another type). Headers
   set by the handler or by other middleware win over them.
-- `StreamOptions.headers` — extra headers that override everything, including handler-set values.
+- `StreamOptions.headers`: extra headers that override everything, including handler-set values.
 - Same streaming model as `sse`: adapters stream `ReadableStream` bodies with backpressure,
   `ctx.request.signal` aborts on client disconnect, and the body streams after the middleware chain
   resolves.
@@ -249,7 +249,7 @@ new RhythmRouter().use(timeout(5000)).get("/slow", async (ctx) => {
 ```
 
 Downstream errors still propagate as errors; only the deadline produces a 504. Note that the downstream
-work is not aborted — its result is discarded.
+work is not aborted; its result is discarded.
 
 ## `@rhythmjs/http/body-limit`
 
@@ -280,19 +280,19 @@ new RhythmRouter().post("/upload", multipart({ maxBytes: 10_000_000, maxFiles: 3
 });
 ```
 
-- `ctx.form` — `get(name)` / `getAll(name)` (string fields), `file(name)` / `files(name?)` (`File`
+- `ctx.form`: `get(name)` / `getAll(name)` (string fields), `file(name)` / `files(name?)` (`File`
   entries), and `data` (the raw `FormData`).
 - Rejections, all as `{ "success": false, "status": ..., "message": ... }`: `415` for non-multipart
   content types, `400` for a missing or malformed body, `413` when `maxBytes` (total body, enforced
   while reading via `Content-Length` or byte counting), `maxFileSize`, `maxFiles`, or `maxFields` is
   exceeded.
 - The body is parsed once; downstream middleware and handlers share `ctx.form` instead of re-reading
-  the single-use body stream. Fields and files are held in memory — set `maxBytes` in production, and
+  the single-use body stream. Fields and files are held in memory, so set `maxBytes` in production, and
   keep streaming-to-disk uploads out of scope for this module.
 
 ## `@rhythmjs/http/proxy`
 
-A reverse proxy on plain `fetch` and web streams — cross-runtime, no dependencies, request and
+A reverse proxy on plain `fetch` and web streams: cross-runtime, no dependencies, request and
 response bodies streamed without buffering. The semantics follow
 [h3's proxy utilities](https://h3.dev/utils/proxy), ported
 to Rhythm's middleware shape.
@@ -310,28 +310,28 @@ the (rewritten) path and query, and the upstream response is relayed back status
 
 Options (`ProxyOptions`):
 
-- `target` — upstream base URL. `rewrite(path)` — adjust the forwarded path.
-- `headers` — extra upstream headers; they win over everything.
+- `target`: upstream base URL. `rewrite(path)`: adjust the forwarded path.
+- `headers`: extra upstream headers; they win over everything.
 - **Header hygiene** (h3's two-tier model): hop-by-hop framing headers (`connection`, `te`,
   `upgrade`, `proxy-authorization`, …) and `Connection`-nominated fields are always dropped both
   directions. Soft drops (`host`, `accept-encoding`, `expect`) can be restored via
-  `forwardHeaders`; `accept-encoding` is dropped because `fetch` transparently decompresses — which
+  `forwardHeaders`; `accept-encoding` is dropped because `fetch` transparently decompresses, which
   is also why stale `content-encoding`/`content-length` are stripped from the response.
-- `filterHeaders` — extra request headers to strip. `Cookie` and `Authorization` are forwarded by
+- `filterHeaders`: extra request headers to strip. `Cookie` and `Authorization` are forwarded by
   default (correct for a same-trust upstream); strip them here when proxying to an upstream you
   don't fully trust.
-- `xfwd` (default `true`) — anti-spoofing `x-forwarded-*`: the client IP (`request.ip`, set by `@rhythmjs/router`'s `serve()`) is
+- `xfwd` (default `true`): anti-spoofing `x-forwarded-*`. the client IP (`request.ip`, exposed in your `Bun.serve` fetch via `server.requestIP()`; see the router README) is
   **appended** to the inbound `x-forwarded-for` chain, while `proto`/`host`/`port` are overwritten
   with server-resolved values so a client-supplied value never reaches the upstream.
-- `redirect` (default `"manual"`) — upstream 3xx passes through to the client;
+- `redirect` (default `"manual"`): upstream 3xx passes through to the client;
   `locationRewrite` (default `true`) rewrites `Location`/`Refresh` URLs pointing at the target
   origin back to the proxy's origin (or takes a `{ prefix: replacement }` map, nginx
   `proxy_redirect`-style).
-- `cookieDomainRewrite` / `cookiePathRewrite` — rewrite `Set-Cookie` `Domain`/`Path` (a string for
+- `cookieDomainRewrite` / `cookiePathRewrite`: rewrite `Set-Cookie` `Domain`/`Path` (a string for
   all, or a `{ value: replacement }` map; empty string removes the attribute).
-- `timeout` — ms to wait for upstream headers, then `504`; an unreachable upstream is `502`, a
+- `timeout`: ms to wait for upstream headers, then `504`; an unreachable upstream is `502`, a
   client disconnect `499`, all in the package's standard JSON error shape.
-- `fetch` — injectable transport (tests, custom agents).
+- `fetch`: injectable transport (tests, custom agents).
 - Compose with `@rhythmjs/http/body-limit` in front when proxying untrusted input, and mount auth
   middleware before it like any other route.
 
@@ -339,8 +339,8 @@ Options (`ProxyOptions`):
 
 Opens a per-request scope (backed by
 [`AsyncLocalStorage`](https://nodejs.org/api/async_context.html)) holding the current
-`RhythmHttpContext` plus a request-local key-value store, readable anywhere in the call stack — loggers,
-database helpers, service functions — without threading `ctx` through every signature.
+`RhythmHttpContext` plus a request-local key-value store, readable anywhere in the call stack (loggers,
+database helpers, service functions) without threading `ctx` through every signature.
 
 ```ts
 import { requestScope, RequestScope } from "@rhythmjs/http/request-scope";
@@ -362,26 +362,26 @@ function greeting() {
 }
 ```
 
-- `requestScope()` — register it before any middleware or handler that uses `RequestScope`. Each request
+- `requestScope()`: register it before any middleware or handler that uses `RequestScope`. Each request
   gets its own scope; concurrent requests never see each other's context or store.
-- `RequestScope.context<TContext>()` — the current context. Pass your extended context type (e.g.
+- `RequestScope.context<TContext>()`: the current context. Pass your extended context type (e.g.
   `RequestScope.context<RhythmHttpContext & CookiesContext>()`) for typed access to properties added by
   earlier middleware.
-- `RequestScope.get(key)` / `set(key, value)` / `has(key)` / `delete(key)` — the request-local store, for
+- `RequestScope.get(key)` / `set(key, value)` / `has(key)` / `delete(key)`: the request-local store, for
   values that belong to the request but not on the context (request ids, loggers, the authenticated
   user). Augment the `RequestScopeStore` interface via declaration merging to type your keys.
-- `RequestScope.run(context, fn)` — open a scope manually, for tests and non-HTTP entry points that reuse
+- `RequestScope.run(context, fn)`: open a scope manually, for tests and non-HTTP entry points that reuse
   request-scoped helpers.
 - Naming convention: bare accessors (`context()`, `get()`, `set()`, …) throw `RequestScopeError` when no
   scope is active; `contextOrNull()` and `isActive()` never throw, for code that runs both inside and
   outside requests.
-- Built on `AsyncLocalStorage`, which Bun supports natively — no setup needed.
+- Built on `AsyncLocalStorage`, which Bun supports natively; no setup needed.
 
 ## Development
 
 ```sh
 bun install
-bun test           # bun test runner
-bun run typecheck  # tsc --noEmit
-bun run build      # bun build + tsc declarations
+bun test # bun test runner
+bun run typecheck # tsc --noEmit
+bun run build # bun build + tsc declarations
 ```

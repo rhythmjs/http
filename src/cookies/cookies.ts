@@ -1,15 +1,12 @@
 import type { DeriveMiddleware, Middleware } from "@rhythmjs/rhythm/types";
 import type { RhythmHttpContext } from "@rhythmjs/router/adapters/context";
 
-/** Bun's cookie attributes: domain, path, expires, maxAge, secure, httpOnly, sameSite, partitioned. */
 export type CookieOptions = Omit<Bun.CookieInit, "name" | "value">;
 
-/** Parse a Cookie header with Bun's native CookieMap (values come back decoded). */
 export function parseCookies(header: string | null): Record<string, string> {
   return header === null ? {} : Object.fromEntries(new Bun.CookieMap(header));
 }
 
-/** Serialize one Set-Cookie value with Bun's native Cookie (defaults: `Path=/`, `SameSite=Lax`). */
 export function serializeCookie(name: string, value: string, options: CookieOptions = {}): string {
   return Bun.Cookie.from(name, value, options).serialize();
 }

@@ -1,4 +1,4 @@
-import { describe, expect, test } from "vite-plus/test";
+import { describe, expect, test } from "bun:test";
 import { Rhythm } from "@rhythmjs/rhythm";
 import { RhythmRouter } from "@rhythmjs/router";
 import { toFetchHandler } from "@rhythmjs/router/fetch";
@@ -55,6 +55,27 @@ async function decompress(response: Response, encoding: "gzip" | "deflate"): Pro
 }
 
 describe("compress", () => {
+  test("prefers zstd by default and compresses buffered bodies with Bun's native zstd", async () => {
+    const res = await app()(new Request("http://localhost/text", { headers: { "accept-encoding": "zstd, gzip" } }));
+
+    expect(res.headers.get("content-encoding")).toBe("zstd");
+    const decompressed = Bun.zstdDecompressSync(new Uint8Array(await res.arrayBuffer()));
+    expect(new TextDecoder().decode(decompressed)).toBe(LARGE_TEXT);
+  });
+
+  test("a streaming body never picks zstd; it falls to gzip via CompressionStream", async () => {
+    const streamApp = serve(
+      new RhythmRouter().use(compress()).get("/stream", (ctx) => {
+        ctx.response.headers.set("content-type", "text/plain");
+        ctx.response.body = new Response(LARGE_TEXT).body;
+      }),
+    );
+    const res = await streamApp(
+      new Request("http://localhost/stream", { headers: { "accept-encoding": "zstd, gzip" } }),
+    );
+
+    expect(res.headers.get("content-encoding")).toBe("gzip");
+  });
   test("gzips a large text response and round-trips it", async () => {
     const res = await app()(get("/text", "gzip"));
 

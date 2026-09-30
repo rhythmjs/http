@@ -5,9 +5,8 @@ export interface EtagOptions {
   weak?: boolean;
 }
 
-async function hash(body: string): Promise<string> {
-  const digest = await crypto.subtle.digest("SHA-1", new TextEncoder().encode(body));
-  return [...new Uint8Array(digest)].map((byte) => byte.toString(16).padStart(2, "0")).join("");
+function hash(body: string): string {
+  return new Bun.CryptoHasher("sha1").update(body).digest("hex");
 }
 
 export function etag(options: EtagOptions = {}): Middleware<RhythmHttpContext> {
@@ -19,7 +18,7 @@ export function etag(options: EtagOptions = {}): Middleware<RhythmHttpContext> {
     if (typeof response.body !== "string") return;
     if (response.headers.get("etag") !== null) return;
 
-    const tag = `${options.weak ? "W/" : ""}"${await hash(response.body)}"`;
+    const tag = `${options.weak ? "W/" : ""}"${hash(response.body)}"`;
     response.headers.set("etag", tag);
 
     const ifNoneMatch = ctx.request.headers.get("if-none-match");

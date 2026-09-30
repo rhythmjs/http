@@ -173,7 +173,7 @@ export function proxy(options: ProxyOptions): Middleware<RhythmHttpContext> {
 
     let upstream: Response;
     try {
-      upstream = await fetchImpl(new Request(url, init));
+      upstream = await fetchImpl(new Request(url.toString(), init));
     } catch (error) {
       if (timedOut) return relayError(ctx, 504, "Gateway Timeout");
       if (ctx.request.signal.aborted) return relayError(ctx, 499, "Client Closed Request");

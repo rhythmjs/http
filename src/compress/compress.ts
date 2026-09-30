@@ -1,7 +1,7 @@
 import type { Middleware } from "@rhythmjs/rhythm/types";
 import type { RhythmHttpContext, RhythmResponseBody } from "@rhythmjs/router/adapters/context";
 
-export type CompressEncoding = "gzip" | "deflate";
+export type CompressEncoding = "gzip" | "deflate" | "zstd";
 
 export interface CompressOptions {
   threshold?: number;
@@ -36,6 +36,13 @@ function byteLength(body: RhythmResponseBody): number | undefined {
   return undefined;
 }
 
+async function toBytes(body: string | ArrayBuffer | Uint8Array | Blob): Promise<Uint8Array<ArrayBuffer>> {
+  if (typeof body === "string") return new TextEncoder().encode(body) as Uint8Array<ArrayBuffer>;
+  if (body instanceof ArrayBuffer) return new Uint8Array(body);
+  if (body instanceof Uint8Array) return body as Uint8Array<ArrayBuffer>;
+  return (await body.bytes()) as Uint8Array<ArrayBuffer>;
+}
+
 function toStream(
   body: string | ArrayBuffer | Uint8Array | Blob | ReadableStream<Uint8Array>,
 ): ReadableStream<Uint8Array> {
@@ -43,17 +50,27 @@ function toStream(
   return new Response(body).body!;
 }
 
+// Bun's native compressors handle gzip and zstd synchronously for buffered
+// bodies. HTTP "deflate" means zlib-wrapped, which Bun.deflateSync does not
+// produce, so deflate always goes through CompressionStream — as do streams,
+// which CompressionStream handles but zstd cannot.
+const compressSync: Partial<Record<CompressEncoding, (data: Uint8Array<ArrayBuffer>) => Uint8Array>> = {
+  gzip: (data) => Bun.gzipSync(data),
+  zstd: (data) => Bun.zstdCompressSync(data),
+};
+
 export function compress(options: CompressOptions = {}): Middleware<RhythmHttpContext> {
   const threshold = options.threshold ?? 1024;
-  const encodings = options.encodings ?? ["gzip", "deflate"];
+  const encodings = options.encodings ?? ["zstd", "gzip", "deflate"];
   const isCompressible = options.filter ?? ((contentType: string) => COMPRESSIBLE_TYPE.test(contentType));
 
   return async (ctx, next) => {
     await next();
 
     const { response } = ctx;
+    const streaming = response.body instanceof ReadableStream;
     const accept = ctx.request.headers.get("accept-encoding");
-    const encoding = encodings.find((name) => acceptsEncoding(accept, name));
+    const encoding = encodings.find((name) => (!streaming || name !== "zstd") && acceptsEncoding(accept, name));
     if (encoding === undefined) return;
 
     if (SKIP_STATUS.has(response.status)) return;
@@ -67,8 +84,17 @@ export function compress(options: CompressOptions = {}): Middleware<RhythmHttpCo
     const size = byteLength(response.body);
     if (size !== undefined && size < threshold) return;
 
-    const compression = new CompressionStream(encoding) as ReadableWritablePair<Uint8Array, Uint8Array>;
-    response.body = toStream(response.body).pipeThrough(compression);
+    const body = response.body;
+    const sync = compressSync[encoding];
+    if (body instanceof ReadableStream || sync === undefined) {
+      const compression = new CompressionStream(encoding as "gzip" | "deflate") as ReadableWritablePair<
+        Uint8Array,
+        Uint8Array
+      >;
+      response.body = toStream(body).pipeThrough(compression);
+    } else {
+      response.body = sync(await toBytes(body));
+    }
     response.headers.set("content-encoding", encoding);
     response.headers.delete("content-length");
   };

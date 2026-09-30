@@ -6,12 +6,13 @@ is exported by its own subpath — there is no root barrel export.
 ## Install
 
 ```sh
-pnpm add @rhythmjs/http @rhythmjs/rhythm @rhythmjs/router
+bun add @rhythmjs/http @rhythmjs/rhythm @rhythmjs/router
 ```
 
 ## `@rhythmjs/http/cookies`
 
-Parses the request `Cookie` header and exposes a `Cookies` jar on the context for reading and writing.
+Bun's native `Bun.CookieMap` and `Bun.Cookie` behind a `Cookies` jar on the context for reading and
+writing.
 
 ```ts
 import { RhythmRouter } from "@rhythmjs/router";
@@ -25,11 +26,13 @@ new RhythmRouter().use<CookiesContext>(cookies()).get("/", (ctx) => {
 });
 ```
 
-- `ctx.cookies` — `get(name)`, `getAll()`, `set(name, value, options?)` (defaults to `Path=/`), and
+- `ctx.cookies` — `get(name)`, `has(name)`, `getAll()`, `set(name, value, options?)`, and
   `delete(name)` (sets `Max-Age=0`). Multiple `set()` calls emit separate `Set-Cookie` headers.
-- `CookieOptions` — `domain`, `expires`, `httpOnly`, `maxAge`, `path`, `sameSite`, `secure`.
+  Bun's serialization defaults apply: `Path=/` and `SameSite=Lax`.
+- `CookieOptions` — Bun's `CookieInit` attributes: `domain`, `expires`, `httpOnly`, `maxAge`, `path`,
+  `sameSite`, `secure`, `partitioned`.
 - The standalone `parseCookies(header)` and `serializeCookie(name, value, options?)` helpers are exported
-  too.
+  too, both on the native primitives.
 
 ## `@rhythmjs/http/session`
 
@@ -113,9 +116,11 @@ new RhythmRouter()
 
 ## `@rhythmjs/http/compress`
 
-Response compression on the web-standard `CompressionStream` — no dependencies, works on every runtime
-the router adapters support. Negotiates `gzip` / `deflate` against the request's `Accept-Encoding`
-(respecting `;q=0`) and pipes the response body through the winner.
+Response compression on Bun's native compressors — no dependencies. Negotiates `zstd` / `gzip` /
+`deflate` against the request's `Accept-Encoding` (respecting `;q=0`): buffered bodies go through
+`Bun.zstdCompressSync` / `Bun.gzipSync` synchronously, streams pipe through `CompressionStream`
+(which is why a streaming body never picks `zstd`, and `deflate` — zlib-wrapped per RFC 9110 —
+always streams).
 
 ```ts
 import { compress } from "@rhythmjs/http/compress";
@@ -129,7 +134,7 @@ Options (`CompressOptions`):
 
 - `threshold` — minimum body size in bytes for buffered bodies (default `1024`); streams are always
   compressed since their size is unknown.
-- `encodings` — preference order offered to the client (default `["gzip", "deflate"]`).
+- `encodings` — preference order offered to the client (default `["zstd", "gzip", "deflate"]`).
 - `filter(contentType)` — replace the default compressible-type check (`text/*`, JSON, JavaScript, XML,
   SVG, wasm).
 - It never touches responses that are `204`/`304`, empty, already `Content-Encoding`-ed,
@@ -287,7 +292,7 @@ new RhythmRouter().post("/upload", multipart({ maxBytes: 10_000_000, maxFiles: 3
 
 A reverse proxy on plain `fetch` and web streams — cross-runtime, no dependencies, request and
 response bodies streamed without buffering. The semantics follow
-[h3's proxy utilities](https://h3.dev/utils/proxy) (h3 and Rhythm share the srvx foundation), ported
+[h3's proxy utilities](https://h3.dev/utils/proxy), ported
 to Rhythm's middleware shape.
 
 ```ts
@@ -313,7 +318,7 @@ Options (`ProxyOptions`):
 - `filterHeaders` — extra request headers to strip. `Cookie` and `Authorization` are forwarded by
   default (correct for a same-trust upstream); strip them here when proxying to an upstream you
   don't fully trust.
-- `xfwd` (default `true`) — anti-spoofing `x-forwarded-*`: the client IP (srvx `request.ip`) is
+- `xfwd` (default `true`) — anti-spoofing `x-forwarded-*`: the client IP (`request.ip`, set by `@rhythmjs/router`'s `serve()`) is
   **appended** to the inbound `x-forwarded-for` chain, while `proto`/`host`/`port` are overwritten
   with server-resolved values so a client-supplied value never reaches the upstream.
 - `redirect` (default `"manual"`) — upstream 3xx passes through to the client;
@@ -374,8 +379,8 @@ function greeting() {
 ## Development
 
 ```sh
-pnpm install
-pnpm test       # vp test
-pnpm typecheck  # tsc --noEmit
-pnpm build      # vp pack
+bun install
+bun test           # bun test runner
+bun run typecheck  # tsc --noEmit
+bun run build      # bun build + tsc declarations
 ```

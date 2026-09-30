@@ -94,20 +94,22 @@
     "access": "public"
   },
   "scripts": {
-    "build": "vp pack",
-    "prepublishOnly": "vp check && vp test && vp pack",
+    "build": "bun build src/body-limit/body-limit.ts src/cache/cache.ts src/compress/compress.ts src/cookies/cookies.ts src/etag/etag.ts src/i18n/i18n.ts src/multipart/multipart.ts src/proxy/proxy.ts src/request-scope/request-scope.ts src/session/session.ts src/sse/sse.ts src/stream/stream.ts src/timeout/timeout.ts --outdir dist --root src --format esm --target bun --packages external --splitting && tsc -p tsconfig.build.json",
+    "prepublishOnly": "bun run check && bun test && bun run build",
     "typecheck": "tsc --noEmit",
-    "test": "vp test",
-    "lint": "vp lint",
-    "fmt": "vp fmt",
-    "fmt:check": "vp fmt --check",
-    "check": "vp check"
+    "test": "bun test",
+    "lint": "oxlint src",
+    "fmt": "prettier --write \"src/**/*.ts\" \"*.json\"",
+    "fmt:check": "prettier --check \"src/**/*.ts\" \"*.json\"",
+    "check": "bun run fmt:check && bun run lint && bun run typecheck"
   },
   "devDependencies": {
+    "@types/bun": "^1.2.0",
     "@types/node": "^26.6.3",
     "i18next": "^26.4.2",
-    "typescript": "^7.0.2",
-    "vite-plus": "^1.0.0"
+    "oxlint": "^1.0.0",
+    "prettier": "^3.5.0",
+    "typescript": "^7.0.2"
   },
   "peerDependencies": {
     "@rhythmjs/rhythm": "^0.0.9",
@@ -120,7 +122,6 @@
     }
   },
   "engines": {
-    "node": ">=20.19.0"
-  },
-  "packageManager": "pnpm@10.33.2"
+    "bun": ">=1.2.0"
+  }
 }

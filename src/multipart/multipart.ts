@@ -1,6 +1,11 @@
 import type { DeriveMiddleware, Middleware } from "@rhythmjs/rhythm/types";
 import type { RhythmHttpContext } from "@rhythmjs/router/adapters/context";
 
+/** The form-data shape `request.formData()` actually returns (undici's under `@types/node`). */
+export type RequestFormData = Awaited<ReturnType<Request["formData"]>>;
+/** The file entry type of that form data. */
+export type FormFile = Exclude<ReturnType<RequestFormData["get"]>, string | null>;
+
 export interface MultipartOptions {
   maxBytes?: number;
   maxFileSize?: number;
@@ -9,13 +14,13 @@ export interface MultipartOptions {
 }
 
 export class MultipartForm {
-  #data: FormData;
+  #data: RequestFormData;
 
-  constructor(data: FormData) {
+  constructor(data: RequestFormData) {
     this.#data = data;
   }
 
-  get data(): FormData {
+  get data(): RequestFormData {
     return this.#data;
   }
 
@@ -28,16 +33,16 @@ export class MultipartForm {
     return this.#data.getAll(name).filter((value): value is string => typeof value === "string");
   }
 
-  file(name: string): File | undefined {
+  file(name: string): FormFile | undefined {
     for (const value of this.#data.getAll(name)) {
-      if (value instanceof File) return value;
+      if (typeof value !== "string") return value;
     }
     return undefined;
   }
 
-  files(name?: string): File[] {
+  files(name?: string): FormFile[] {
     const values = name === undefined ? [...this.#data.values()] : this.#data.getAll(name);
-    return values.filter((value): value is File => value instanceof File);
+    return values.filter((value): value is FormFile => typeof value !== "string");
   }
 }
 
@@ -56,7 +61,7 @@ function isTooLarge(error: unknown): boolean {
   return false;
 }
 
-function parse(request: Request, maxBytes: number | undefined): Promise<FormData> {
+function parse(request: Request, maxBytes: number | undefined): Promise<RequestFormData> {
   if (maxBytes === undefined || request.body === null) return request.formData();
   let total = 0;
   const reader = request.body.getReader();
@@ -103,7 +108,7 @@ export function multipart(options: MultipartOptions = {}): DeriveMiddleware<Rhyt
       return;
     }
 
-    let data: FormData;
+    let data: RequestFormData;
     try {
       data = await parse(ctx.request, maxBytes);
     } catch (error) {

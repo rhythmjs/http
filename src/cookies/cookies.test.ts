@@ -1,4 +1,4 @@
-import { describe, expect, test } from "vite-plus/test";
+import { describe, expect, test } from "bun:test";
 import { Rhythm } from "@rhythmjs/rhythm";
 import { RhythmRouter } from "@rhythmjs/router";
 import { toFetchHandler } from "@rhythmjs/router/fetch";
@@ -42,7 +42,7 @@ describe("cookies", () => {
 
     const res = await app(new Request("http://localhost/"));
 
-    expect(res.headers.get("set-cookie")).toBe("theme=dark%20mode; Max-Age=3600; Path=/; HttpOnly; SameSite=Lax");
+    expect(res.headers.get("set-cookie")).toBe("theme=dark%20mode; Path=/; Max-Age=3600; HttpOnly; SameSite=Lax");
   });
 
   test("sets multiple cookies as separate set-cookie headers", async () => {
@@ -56,7 +56,7 @@ describe("cookies", () => {
 
     const res = await app(new Request("http://localhost/"));
 
-    expect(res.headers.getSetCookie()).toEqual(["a=1; Path=/", "b=2; Path=/"]);
+    expect(res.headers.getSetCookie()).toEqual(["a=1; Path=/; SameSite=Lax", "b=2; Path=/; SameSite=Lax"]);
   });
 
   test("delete() expires the cookie", async () => {
@@ -69,11 +69,11 @@ describe("cookies", () => {
 
     const res = await app(new Request("http://localhost/"));
 
-    expect(res.headers.get("set-cookie")).toBe("theme=; Max-Age=0; Path=/");
+    expect(res.headers.get("set-cookie")).toBe("theme=; Path=/; Max-Age=0; SameSite=Lax");
   });
 
   test("parseCookies and serializeCookie round-trip values and attributes", () => {
-    expect(parseCookies('a=1; b="quoted"; malformed; =empty')).toEqual({ a: "1", b: "quoted" });
+    expect(parseCookies('a=1; b="quoted"; malformed; =empty')).toEqual({ a: "1", b: '"quoted"' });
     expect(parseCookies(null)).toEqual({});
     expect(
       serializeCookie("token", "a b", {

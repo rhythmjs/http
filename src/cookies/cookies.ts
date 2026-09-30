@@ -1,68 +1,42 @@
 import type { DeriveMiddleware, Middleware } from "@rhythmjs/rhythm/types";
 import type { RhythmHttpContext } from "@rhythmjs/router/adapters/context";
 
-export interface CookieOptions {
-  domain?: string;
-  expires?: Date;
-  httpOnly?: boolean;
-  maxAge?: number;
-  path?: string;
-  sameSite?: "strict" | "lax" | "none";
-  secure?: boolean;
-}
+/** Bun's cookie attributes: domain, path, expires, maxAge, secure, httpOnly, sameSite, partitioned. */
+export type CookieOptions = Omit<Bun.CookieInit, "name" | "value">;
 
+/** Parse a Cookie header with Bun's native CookieMap (values come back decoded). */
 export function parseCookies(header: string | null): Record<string, string> {
-  const out: Record<string, string> = {};
-  if (!header) return out;
-  for (const part of header.split(/;\s*/)) {
-    const eq = part.indexOf("=");
-    if (eq === -1) continue;
-    const name = part.slice(0, eq).trim();
-    if (!name) continue;
-    let value = part.slice(eq + 1).trim();
-    if (value.startsWith('"') && value.endsWith('"')) value = value.slice(1, -1);
-    try {
-      out[name] = decodeURIComponent(value);
-    } catch {
-      out[name] = value;
-    }
-  }
-  return out;
+  return header === null ? {} : Object.fromEntries(new Bun.CookieMap(header));
 }
 
+/** Serialize one Set-Cookie value with Bun's native Cookie (defaults: `Path=/`, `SameSite=Lax`). */
 export function serializeCookie(name: string, value: string, options: CookieOptions = {}): string {
-  let cookie = `${name}=${encodeURIComponent(value)}`;
-  if (options.maxAge !== undefined) cookie += `; Max-Age=${Math.trunc(options.maxAge)}`;
-  if (options.domain !== undefined) cookie += `; Domain=${options.domain}`;
-  if (options.path !== undefined) cookie += `; Path=${options.path}`;
-  if (options.expires !== undefined) cookie += `; Expires=${options.expires.toUTCString()}`;
-  if (options.httpOnly) cookie += "; HttpOnly";
-  if (options.secure) cookie += "; Secure";
-  if (options.sameSite !== undefined) {
-    cookie += `; SameSite=${options.sameSite.charAt(0).toUpperCase()}${options.sameSite.slice(1)}`;
-  }
-  return cookie;
+  return Bun.Cookie.from(name, value, options).serialize();
 }
 
 export class Cookies {
-  #incoming: Record<string, string>;
+  #incoming: Bun.CookieMap;
   #headers: Headers;
 
-  constructor(incoming: Record<string, string>, headers: Headers) {
+  constructor(incoming: Bun.CookieMap, headers: Headers) {
     this.#incoming = incoming;
     this.#headers = headers;
   }
 
   get(name: string): string | undefined {
-    return this.#incoming[name];
+    return this.#incoming.get(name) ?? undefined;
+  }
+
+  has(name: string): boolean {
+    return this.#incoming.has(name);
   }
 
   getAll(): Record<string, string> {
-    return { ...this.#incoming };
+    return Object.fromEntries(this.#incoming);
   }
 
   set(name: string, value: string, options: CookieOptions = {}): void {
-    this.#headers.append("set-cookie", serializeCookie(name, value, { path: "/", ...options }));
+    this.#headers.append("set-cookie", serializeCookie(name, value, options));
   }
 
   delete(name: string, options: CookieOptions = {}): void {
@@ -76,7 +50,7 @@ export type CookiesContext = {
 
 export function cookies(): DeriveMiddleware<RhythmHttpContext, CookiesContext> {
   const middleware: Middleware<RhythmHttpContext & Partial<CookiesContext>> = async (ctx, next) => {
-    ctx.cookies = new Cookies(parseCookies(ctx.request.headers.get("cookie")), ctx.response.headers);
+    ctx.cookies = new Cookies(new Bun.CookieMap(ctx.request.headers.get("cookie") ?? ""), ctx.response.headers);
     await next();
   };
   return middleware as DeriveMiddleware<RhythmHttpContext, CookiesContext>;

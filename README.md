@@ -258,7 +258,9 @@ work is not aborted; its result is discarded.
 ## `@rhythmjs/http/body-limit`
 
 Rejects request bodies larger than a byte limit with `413 Payload Too Large`, using `Content-Length` when
-present and measuring the body otherwise.
+present (and valid) and counting the body stream otherwise: reading stops the moment the limit is
+crossed, so a chunked body can never buffer more than `maxBytes` plus one chunk. Bodies that pass are
+re-exposed on `ctx.request` already buffered, so handlers read them as usual.
 
 ```ts
 import { bodyLimit } from "@rhythmjs/http/body-limit";

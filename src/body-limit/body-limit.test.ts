@@ -41,6 +41,48 @@ describe("bodyLimit", () => {
     expect(res.status).toBe(413);
   });
 
+  test("aborts a streaming body at the limit instead of buffering it", async () => {
+    let produced = 0;
+    const endless = new ReadableStream<Uint8Array>({
+      pull(controller) {
+        produced += 1024;
+        controller.enqueue(new Uint8Array(1024));
+      },
+    });
+    const res = await app(4096)(
+      new Request("http://localhost/upload", { method: "POST", body: endless, duplex: "half" } as RequestInit),
+    );
+
+    expect(res.status).toBe(413);
+    expect(produced).toBeLessThanOrEqual(4096 + 2048);
+  });
+
+  test("enforces the limit when content-length is malformed", async () => {
+    const res = await app(10)(
+      new Request("http://localhost/upload", {
+        method: "POST",
+        body: "x".repeat(64),
+        headers: { "content-length": "not-a-number" },
+      }),
+    );
+
+    expect(res.status).toBe(413);
+  });
+
+  test("preserves request.ip on the replacement request", async () => {
+    const handler = serve(
+      new RhythmRouter().use(bodyLimit(1024)).post("/upload", (ctx) => {
+        ctx.response.body = `ip ${(ctx.request as { ip?: string }).ip}`;
+      }),
+    );
+    const request = new Request("http://localhost/upload", { method: "POST", body: "small" });
+    (request as unknown as { ip?: string }).ip = "10.0.0.1";
+
+    const res = await handler(request);
+
+    expect(await res.text()).toBe("ip 10.0.0.1");
+  });
+
   test("lets bodyless requests through regardless of the limit", async () => {
     const handler = serve(
       new RhythmRouter().use(bodyLimit(0)).get("/ping", (ctx) => {

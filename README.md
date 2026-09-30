@@ -119,6 +119,57 @@ new RhythmRouter().use<I18nContext>(i18n({ i18next })).get("/greet", (ctx) => {
 - The standalone `detectLanguage(request, options?)` and `parseAcceptLanguage(header)` helpers are
   exported too.
 
+## `@rhythmjs/http/sse`
+
+Route middleware that applies the Server-Sent Events response headers. The handler owns the body:
+assign any `ReadableStream` of SSE frames — driven by a writer, a generator, an observable bridge, or
+anything else.
+
+```ts
+import { sse } from "@rhythmjs/http/sse";
+
+new RhythmRouter().get("/events", sse(), (ctx) => {
+  const encoder = new TextEncoder();
+  ctx.response.body = new ReadableStream<Uint8Array>({
+    start(controller) {
+      controller.enqueue(encoder.encode("data: hello\n\n"));
+      controller.close();
+    },
+  });
+});
+```
+
+- Defaults, each applied only if absent after the handler runs: `content-type: text/event-stream`,
+  `cache-control: no-cache, no-transform`, `connection: keep-alive`, `x-accel-buffering: no`
+  (disables nginx proxy buffering). Headers set by the handler or by other middleware win over them.
+- `SseOptions.headers` — extra headers that override everything, including handler-set values.
+- Every server adapter streams `ReadableStream` bodies with backpressure; `ctx.request.signal` aborts
+  on client disconnect, so producers can stop cleanly. The body streams after the middleware chain
+  resolves, so after-`next()` middleware sees time-to-headers, not the lifetime of the stream.
+
+## `@rhythmjs/http/stream`
+
+Route middleware that applies plain streaming response headers — the non-SSE sibling of
+`@rhythmjs/http/sse`. The handler owns the body: assign any `ReadableStream` (progressive text,
+NDJSON, LLM tokens, proxied upstream bodies).
+
+```ts
+import { stream } from "@rhythmjs/http/stream";
+
+new RhythmRouter().get("/report", stream(), (ctx) => {
+  ctx.response.body = upstream.body;
+});
+```
+
+- Defaults, each applied only if absent after the handler runs: `content-type: text/plain`,
+  `cache-control: no-cache, no-transform`, `connection: keep-alive`, `x-accel-buffering: no`, and
+  `x-content-type-options: nosniff` (stops browsers sniffing the stream into another type). Headers
+  set by the handler or by other middleware win over them.
+- `StreamOptions.headers` — extra headers that override everything, including handler-set values.
+- Same streaming model as `sse`: adapters stream `ReadableStream` bodies with backpressure,
+  `ctx.request.signal` aborts on client disconnect, and the body streams after the middleware chain
+  resolves.
+
 ## `@rhythmjs/http/timeout`
 
 Fails requests that exceed a deadline with `504 { "success": false, "status": 504, "message": "Gateway Timeout" }`.
@@ -146,6 +197,32 @@ new RhythmRouter().use(bodyLimit(1024 * 1024)).post("/upload", async (ctx) => {
   ctx.response.body = "stored";
 });
 ```
+
+## `@rhythmjs/http/multipart`
+
+Parses `multipart/form-data` request bodies once and exposes a `MultipartForm` on the context, with
+limits enforced before the handler runs. Uses the runtime's native multipart parser.
+
+```ts
+import { multipart, type MultipartContext } from "@rhythmjs/http/multipart";
+
+new RhythmRouter().post("/upload", multipart({ maxBytes: 10_000_000, maxFiles: 3 }), (ctx) => {
+  ctx.form.get("title"); // string | undefined
+  ctx.form.file("avatar"); // File | undefined
+  ctx.form.files(); // File[]
+  ctx.response.body = "stored";
+});
+```
+
+- `ctx.form` — `get(name)` / `getAll(name)` (string fields), `file(name)` / `files(name?)` (`File`
+  entries), and `data` (the raw `FormData`).
+- Rejections, all as `{ "success": false, "status": ..., "message": ... }`: `415` for non-multipart
+  content types, `400` for a missing or malformed body, `413` when `maxBytes` (total body, enforced
+  while reading via `Content-Length` or byte counting), `maxFileSize`, `maxFiles`, or `maxFields` is
+  exceeded.
+- The body is parsed once; downstream middleware and handlers share `ctx.form` instead of re-reading
+  the single-use body stream. Fields and files are held in memory — set `maxBytes` in production, and
+  keep streaming-to-disk uploads out of scope for this module.
 
 ## `@rhythmjs/http/request-scope`
 

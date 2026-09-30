@@ -11,9 +11,13 @@
     "i18n",
     "i18next",
     "middleware",
+    "multipart",
     "request-scope",
     "rhythm",
+    "server-sent-events",
     "session",
+    "sse",
+    "streaming",
     "timeout"
   ],
   "license": "ISC",
@@ -43,6 +47,10 @@
       "types": "./dist/i18n/i18n.d.ts",
       "default": "./dist/i18n/i18n.js"
     },
+    "./multipart": {
+      "types": "./dist/multipart/multipart.d.ts",
+      "default": "./dist/multipart/multipart.js"
+    },
     "./request-scope": {
       "types": "./dist/request-scope/request-scope.d.ts",
       "default": "./dist/request-scope/request-scope.js"
@@ -50,6 +58,14 @@
     "./session": {
       "types": "./dist/session/session.d.ts",
       "default": "./dist/session/session.js"
+    },
+    "./sse": {
+      "types": "./dist/sse/sse.d.ts",
+      "default": "./dist/sse/sse.js"
+    },
+    "./stream": {
+      "types": "./dist/stream/stream.d.ts",
+      "default": "./dist/stream/stream.js"
     },
     "./timeout": {
       "types": "./dist/timeout/timeout.d.ts",

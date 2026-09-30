@@ -77,8 +77,8 @@
     "vite-plus": "^1.0.0"
   },
   "peerDependencies": {
-    "@rhythmjs/rhythm": "^0.0.5",
-    "@rhythmjs/router": "^0.0.5",
+    "@rhythmjs/rhythm": "^0.0.9",
+    "@rhythmjs/router": "^0.0.9",
     "i18next": "*"
   },
   "peerDependenciesMeta": {

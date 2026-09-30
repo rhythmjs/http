@@ -2,7 +2,7 @@ import { describe, expect, test } from "vite-plus/test";
 import { createInstance } from "i18next";
 import { Rhythm } from "@rhythmjs/rhythm";
 import { RhythmRouter } from "@rhythmjs/router";
-import { toFetchHandler } from "@rhythmjs/router/adapters/bun";
+import { toFetchHandler } from "@rhythmjs/router/fetch";
 import type { RhythmHttpContext } from "@rhythmjs/router/adapters/context";
 import { detectLanguage, i18n, type I18nOptions, parseAcceptLanguage } from "./i18n";
 

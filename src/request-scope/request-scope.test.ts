@@ -1,7 +1,7 @@
 import { describe, expect, test } from "vite-plus/test";
 import { Rhythm } from "@rhythmjs/rhythm";
 import { RhythmRouter } from "@rhythmjs/router";
-import { toFetchHandler } from "@rhythmjs/router/adapters/bun";
+import { toFetchHandler } from "@rhythmjs/router/fetch";
 import { createHttpContext, type RhythmHttpContext } from "@rhythmjs/router/adapters/context";
 import { RequestScope, RequestScopeError, requestScope } from "./request-scope";
 

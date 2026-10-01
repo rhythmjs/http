@@ -16,8 +16,8 @@
         "typescript": "^7.0.2",
       },
       "peerDependencies": {
-        "@rhythmjs/rhythm": "^0.0.13",
-        "@rhythmjs/router": "^0.0.12",
+        "@rhythmjs/rhythm": "^0.0.14",
+        "@rhythmjs/router": "^0.0.13",
         "i18next": "*",
       },
       "optionalPeers": [
@@ -26,7 +26,7 @@
     },
   },
   "overrides": {
-    "@rhythmjs/rhythm": "0.0.13",
+    "@rhythmjs/rhythm": "0.0.14",
   },
   "packages": {
     "@oxlint/binding-android-arm-eabi": ["@oxlint/binding-android-arm-eabi@1.86.0", "", { "os": "android", "cpu": "arm" }, "sha512-63Ozq6yQn79B2UxjSZ9huJmI+3/ZPI7hxAe6TyFh9oQL447KnIMoffOdtog+h4KILbQr61ZRvFPW5gYbAUgpgQ=="],
@@ -67,7 +67,7 @@
 
     "@oxlint/binding-win32-x64-msvc": ["@oxlint/binding-win32-x64-msvc@1.86.0", "", { "os": "win32", "cpu": "x64" }, "sha512-az4dzifCRzES1crwu6pDFXzJTIanrdxXFL9TbiJWrx9LKcuacbR83aPvxDA1LKLNswi/RoqitC7Afcflhu3zBQ=="],
 
-    "@rhythmjs/rhythm": ["@rhythmjs/rhythm@0.0.13", "", {}, "sha512-kQhjP+mNz3IUvv9vp1uqX7P++j7ZmWCIU71cazjWp8SctuLaAs2VD+vf+7vjZAIUHIyTz+7En6xScf1QlNyqcQ=="],
+    "@rhythmjs/rhythm": ["@rhythmjs/rhythm@0.0.14", "", {}, "sha512-MFpBWkxW8xPxTL2F0sFLgvtB9FLurTIL7vRZWu/Vj+/23MC+Q85gNdoahn+2Rvi7s0XceCrv3wrZDJqbR1uQVA=="],
 
     "@rhythmjs/router": ["@rhythmjs/router@0.0.12", "", { "dependencies": { "@rhythmjs/rhythm": "0.0.12", "rou3": "^0.11.0" } }, "sha512-rrPr9zZ4G1BMj0aqQE/OLORpbOEaONNZnNQAIsE0mR5LglbRqavaT/FvU2ic3HG3AN0wd0qxjW/Iilq5TP0pHQ=="],
 

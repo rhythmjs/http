@@ -15,7 +15,8 @@ export interface CacheControlOptions {
 }
 
 function seconds(name: string, value: number): number {
-  if (!Number.isInteger(value) || value < 0) throw new RangeError(`cache-control ${name} must be a non-negative integer`);
+  if (!Number.isInteger(value) || value < 0)
+    throw new RangeError(`cache-control ${name} must be a non-negative integer`);
   return value;
 }
 

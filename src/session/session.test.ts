@@ -92,7 +92,9 @@ describe("session", () => {
   test("secure: false drops the Secure attribute for plain-HTTP development", async () => {
     const res = await app({ secure: false })(new Request("http://localhost/login", { method: "POST" }));
 
-    expect(res.headers.get("set-cookie")).toBe("sid=" + sidFrom(res) + "; Max-Age=86400; Path=/; HttpOnly; SameSite=Lax");
+    expect(res.headers.get("set-cookie")).toBe(
+      "sid=" + sidFrom(res) + "; Max-Age=86400; Path=/; HttpOnly; SameSite=Lax",
+    );
   });
 
   test("regenerate() issues a new id, keeps the data, and invalidates the old id", async () => {

@@ -148,6 +148,27 @@ describe("cache", () => {
     expect(handled()).toBe(2);
   });
 
+  test("bypasses the cache for requests that carry cookies", async () => {
+    const { handler, handled } = counterApp();
+
+    await handler(get("/data"));
+    const withCookie = await handler(get("/data", { cookie: "sid=user-a" }));
+    await handler(get("/data", { cookie: "sid=user-a" }));
+
+    expect(withCookie.headers.get("x-cache")).toBeNull();
+    expect(handled()).toBe(3);
+  });
+
+  test("caches requests that carry cookies when cookies is enabled", async () => {
+    const { handler, handled } = counterApp({ cookies: true });
+
+    await handler(get("/data", { cookie: "sid=user-a" }));
+    const res = await handler(get("/data", { cookie: "sid=user-b" }));
+
+    expect(res.headers.get("x-cache")).toBe("HIT");
+    expect(handled()).toBe(1);
+  });
+
   test("caches authorized requests when the response is explicitly public", async () => {
     const { handler, handled } = counterApp();
 

@@ -106,7 +106,8 @@ new RhythmRouter()
   `no-store`/`private`, `text/event-stream`, `Vary: *`, responses that carry `Set-Cookie`, stream
   bodies, or responses to requests with `Authorization` unless the response opts in with `public`,
   `s-maxage`, or `must-revalidate` (RFC 9111 §3.5) — a shared cache must not replay one user's
-  response to another.
+  response to another. Requests that carry a `Cookie` header bypass the cache entirely (no lookup, no
+  store) unless `cookies: true` is set.
 
 `CacheOptions`:
 
@@ -118,6 +119,8 @@ new RhythmRouter()
   it with Redis etc. to share across processes, and invalidate with `store.delete(key)`.
 - `keyOf(request)`: cache key (default `METHOD path?query`).
 - `vary`: request header names folded into the key (e.g. `["accept-language"]`).
+- `cookies`: cache requests that carry a `Cookie` header (default `false`). Enable only when the
+  response does not depend on cookies, or fold the relevant cookie into the key with `vary: ["cookie"]`.
 - `filter(ctx)`: veto caching per response.
 
 ## `@rhythmjs/http/compress`
@@ -291,9 +294,10 @@ new RhythmRouter().post("/upload", multipart({ maxBytes: 10_000_000, maxFiles: 3
 - Rejections, all as `{ "success": false, "status": ..., "message": ... }`: `415` for non-multipart
   content types, `400` for a missing or malformed body, `413` when `maxBytes` (total body, enforced
   while reading via `Content-Length` or byte counting), `maxFileSize`, `maxFiles`, or `maxFields` is
-  exceeded.
+  exceeded. `maxBytes` defaults to 10 MiB; pass `Infinity` to lift it. `maxFileSize`, `maxFiles` and
+  `maxFields` are checked after the body is parsed, so `maxBytes` is what bounds memory.
 - The body is parsed once; downstream middleware and handlers share `ctx.form` instead of re-reading
-  the single-use body stream. Fields and files are held in memory, so set `maxBytes` in production, and
+  the single-use body stream. Fields and files are held in memory, so keep `maxBytes` as low as your uploads allow, and
   keep streaming-to-disk uploads out of scope for this module.
 
 ## `@rhythmjs/http/request-scope`

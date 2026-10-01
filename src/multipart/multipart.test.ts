@@ -52,6 +52,24 @@ describe("multipart", () => {
     expect(text).toBe("binary\u0000safe");
   });
 
+  test("applies a 10 MiB default body limit", async () => {
+    const form = new FormData();
+    form.append("file", new File([new Uint8Array(11 * 1024 * 1024)], "big.bin"));
+
+    const res = await echoApp()(upload(form));
+
+    expect(res.status).toBe(413);
+  });
+
+  test("lifts the body limit when maxBytes is Infinity", async () => {
+    const form = new FormData();
+    form.append("file", new File([new Uint8Array(11 * 1024 * 1024)], "big.bin"));
+
+    const res = await echoApp({ maxBytes: Infinity })(upload(form));
+
+    expect(res.status).toBe(200);
+  });
+
   test("rejects non-multipart requests with 415", async () => {
     const res = await echoApp()(
       new Request("http://localhost/upload", {

@@ -4,6 +4,8 @@ import type { RhythmHttpContext } from "@rhythmjs/router/adapters/context";
 export type RequestFormData = Awaited<ReturnType<Request["formData"]>>;
 export type FormFile = Exclude<ReturnType<RequestFormData["get"]>, string | null>;
 
+const DEFAULT_MAX_BYTES = 10 * 1024 * 1024;
+
 export interface MultipartOptions {
   maxBytes?: number;
   maxFileSize?: number;
@@ -59,8 +61,8 @@ function isTooLarge(error: unknown): boolean {
   return false;
 }
 
-function parse(request: Request, maxBytes: number | undefined): Promise<RequestFormData> {
-  if (maxBytes === undefined || request.body === null) return request.formData();
+function parse(request: Request, maxBytes: number): Promise<RequestFormData> {
+  if (maxBytes === Infinity || request.body === null) return request.formData();
   let total = 0;
   const reader = request.body.getReader();
   const limited = new ReadableStream<Uint8Array>({
@@ -82,7 +84,8 @@ function parse(request: Request, maxBytes: number | undefined): Promise<RequestF
 }
 
 export function multipart(options: MultipartOptions = {}): DeriveMiddleware<RhythmHttpContext, MultipartContext> {
-  const { maxBytes, maxFileSize, maxFiles, maxFields } = options;
+  const { maxFileSize, maxFiles, maxFields } = options;
+  const maxBytes = options.maxBytes ?? DEFAULT_MAX_BYTES;
 
   const middleware: Middleware<RhythmHttpContext & Partial<MultipartContext>> = async (ctx, next) => {
     const reject = (status: number, message: string): void => {
@@ -101,7 +104,7 @@ export function multipart(options: MultipartOptions = {}): DeriveMiddleware<Rhyt
       return;
     }
     const contentLength = ctx.request.headers.get("content-length");
-    if (maxBytes !== undefined && contentLength !== null && Number(contentLength) > maxBytes) {
+    if (contentLength !== null && Number(contentLength) > maxBytes) {
       reject(413, "Payload Too Large");
       return;
     }

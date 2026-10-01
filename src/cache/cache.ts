@@ -101,6 +101,7 @@ export interface CacheOptions {
   store?: CacheStore;
   keyOf?: (request: Request) => string | Promise<string>;
   vary?: string[];
+  cookies?: boolean;
   filter?: (ctx: RhythmHttpContext) => boolean | Promise<boolean>;
 }
 
@@ -124,6 +125,7 @@ export function cache(options: CacheOptions = {}): Middleware<RhythmHttpContext>
   const keyOf = options.keyOf ?? defaultKey;
   const vary = options.vary ?? [];
   const filter = options.filter;
+  const cookies = options.cookies ?? false;
 
   const fullKey = async (request: Request): Promise<string> => {
     let key = await keyOf(request);
@@ -132,7 +134,7 @@ export function cache(options: CacheOptions = {}): Middleware<RhythmHttpContext>
   };
 
   return async (ctx, next) => {
-    if (!CACHEABLE_METHODS.has(ctx.request.method)) {
+    if (!CACHEABLE_METHODS.has(ctx.request.method) || (!cookies && ctx.request.headers.has("cookie"))) {
       await next();
       return;
     }

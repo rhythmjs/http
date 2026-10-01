@@ -16,14 +16,17 @@
         "typescript": "^7.0.2",
       },
       "peerDependencies": {
-        "@rhythmjs/rhythm": "^0.0.11",
-        "@rhythmjs/router": "^0.0.11",
+        "@rhythmjs/rhythm": "^0.0.13",
+        "@rhythmjs/router": "^0.0.12",
         "i18next": "*",
       },
       "optionalPeers": [
         "i18next",
       ],
     },
+  },
+  "overrides": {
+    "@rhythmjs/rhythm": "0.0.13",
   },
   "packages": {
     "@oxlint/binding-android-arm-eabi": ["@oxlint/binding-android-arm-eabi@1.86.0", "", { "os": "android", "cpu": "arm" }, "sha512-63Ozq6yQn79B2UxjSZ9huJmI+3/ZPI7hxAe6TyFh9oQL447KnIMoffOdtog+h4KILbQr61ZRvFPW5gYbAUgpgQ=="],
@@ -64,9 +67,9 @@
 
     "@oxlint/binding-win32-x64-msvc": ["@oxlint/binding-win32-x64-msvc@1.86.0", "", { "os": "win32", "cpu": "x64" }, "sha512-az4dzifCRzES1crwu6pDFXzJTIanrdxXFL9TbiJWrx9LKcuacbR83aPvxDA1LKLNswi/RoqitC7Afcflhu3zBQ=="],
 
-    "@rhythmjs/rhythm": ["@rhythmjs/rhythm@0.0.11", "", {}, "sha512-+e3eQSsh/3wRGiF9sqtO6rkSa75eH8aDumgfwr2mAWdxy7s/14ns8Fx9uIT8AzXWKYTUsqBY2ITkw4YS3sENDg=="],
+    "@rhythmjs/rhythm": ["@rhythmjs/rhythm@0.0.13", "", {}, "sha512-kQhjP+mNz3IUvv9vp1uqX7P++j7ZmWCIU71cazjWp8SctuLaAs2VD+vf+7vjZAIUHIyTz+7En6xScf1QlNyqcQ=="],
 
-    "@rhythmjs/router": ["@rhythmjs/router@0.0.11", "", { "dependencies": { "@rhythmjs/rhythm": "0.0.11", "rou3": "^0.11.0" } }, "sha512-FyOgZJOBbOTWs4+b7xasz7Jfe3GqurzQ3diV2qjOv4phV8t68TwrkufJgVje75fcYUzVv3/AxhXikqF6w23JdA=="],
+    "@rhythmjs/router": ["@rhythmjs/router@0.0.12", "", { "dependencies": { "@rhythmjs/rhythm": "0.0.12", "rou3": "^0.11.0" } }, "sha512-rrPr9zZ4G1BMj0aqQE/OLORpbOEaONNZnNQAIsE0mR5LglbRqavaT/FvU2ic3HG3AN0wd0qxjW/Iilq5TP0pHQ=="],
 
     "@types/bun": ["@types/bun@1.4.2", "", { "dependencies": { "bun-types": "1.4.2" } }, "sha512-GimotNn7+ZV0uVArItBbriZsR1oNf0+WTzPkdcFrzShI7k2norL0uzEaJT8T33dWr7O/c9ZDuAFQrctKCi72oQ=="],
 

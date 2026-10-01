@@ -11,6 +11,7 @@ export interface SessionStore {
 
 export function memorySessionStore(): SessionStore {
   const entries = new Map<string, { data: SessionData; expires: number }>();
+  let nextSweep = 0;
 
   return {
     get(id: string): SessionData | undefined {
@@ -23,7 +24,12 @@ export function memorySessionStore(): SessionStore {
       return entry.data;
     },
     set(id: string, data: SessionData, maxAge: number): void {
-      entries.set(id, { data, expires: Date.now() + maxAge * 1000 });
+      const now = Date.now();
+      if (now >= nextSweep) {
+        for (const [key, entry] of entries) if (entry.expires <= now) entries.delete(key);
+        nextSweep = now + maxAge * 1000;
+      }
+      entries.set(id, { data, expires: now + maxAge * 1000 });
     },
     delete(id: string): void {
       entries.delete(id);
@@ -36,6 +42,7 @@ export interface Session {
   get<T = unknown>(key: string): T | undefined;
   set(key: string, value: unknown): void;
   delete(key: string): void;
+  regenerate(): void;
   destroy(): void;
 }
 
@@ -74,19 +81,22 @@ export function session(options: SessionOptions = {}): DeriveMiddleware<RhythmHt
   const path = options.path ?? "/";
   const sameSite = options.sameSite ?? "lax";
   const sameSiteLabel = `${sameSite.charAt(0).toUpperCase()}${sameSite.slice(1)}`;
-  const secureAttribute = options.secure ? "; Secure" : "";
+  const secureAttribute = options.secure === false ? "" : "; Secure";
   const baseAttributes = `; Path=${path}; HttpOnly; SameSite=${sameSiteLabel}${secureAttribute}`;
 
   const middleware: Middleware<RhythmHttpContext & Partial<SessionContext>> = async (ctx, next) => {
     const incomingId = readCookie(ctx.request.headers.get("cookie"), cookieName);
     const existing = incomingId === undefined ? undefined : await store.get(incomingId);
-    const id = existing === undefined ? crypto.randomUUID() : (incomingId as string);
+    let id = existing === undefined ? crypto.randomUUID() : (incomingId as string);
     const data: SessionData = { ...existing };
     let dirty = false;
     let destroyed = false;
+    let rotated = false;
 
     const current: Session = {
-      id,
+      get id() {
+        return id;
+      },
       get: <T = unknown>(key: string) => data[key] as T | undefined,
       set: (key, value) => {
         data[key] = value;
@@ -94,6 +104,11 @@ export function session(options: SessionOptions = {}): DeriveMiddleware<RhythmHt
       },
       delete: (key) => {
         delete data[key];
+        dirty = true;
+      },
+      regenerate: () => {
+        id = crypto.randomUUID();
+        rotated = true;
         dirty = true;
       },
       destroy: () => {
@@ -110,8 +125,9 @@ export function session(options: SessionOptions = {}): DeriveMiddleware<RhythmHt
       return;
     }
     if (dirty) {
+      if (rotated && incomingId !== undefined) await store.delete(incomingId);
       await store.set(id, data, maxAge);
-      if (existing === undefined) {
+      if (existing === undefined || rotated) {
         ctx.response.headers.append("set-cookie", `${cookieName}=${id}; Max-Age=${maxAge}${baseAttributes}`);
       }
     }

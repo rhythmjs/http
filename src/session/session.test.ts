@@ -18,6 +18,10 @@ const app = (options?: SessionOptions) =>
         ctx.session.set("user", "ada");
         ctx.response.body = "logged in";
       })
+      .post("/rotate", (ctx) => {
+        ctx.session.regenerate();
+        ctx.response.body = ctx.session.id;
+      })
       .post("/logout", (ctx) => {
         ctx.session.destroy();
         ctx.response.body = "logged out";
@@ -37,7 +41,7 @@ describe("session", () => {
     const login = await handler(new Request("http://localhost/login", { method: "POST" }));
 
     const cookie = login.headers.get("set-cookie") ?? "";
-    expect(cookie).toMatch(/^sid=[0-9a-f-]+; Max-Age=86400; Path=\/; HttpOnly; SameSite=Lax$/);
+    expect(cookie).toMatch(/^sid=[0-9a-f-]+; Max-Age=86400; Path=\/; HttpOnly; SameSite=Lax; Secure$/);
 
     const read = await handler(new Request("http://localhost/read", { headers: { cookie: `sid=${sidFrom(login)}` } }));
     const body = (await read.json()) as { id: string; user: string | null };
@@ -62,7 +66,7 @@ describe("session", () => {
     const logout = await handler(
       new Request("http://localhost/logout", { method: "POST", headers: { cookie: `sid=${sid}` } }),
     );
-    expect(logout.headers.get("set-cookie")).toBe("sid=; Max-Age=0; Path=/; HttpOnly; SameSite=Lax");
+    expect(logout.headers.get("set-cookie")).toBe("sid=; Max-Age=0; Path=/; HttpOnly; SameSite=Lax; Secure");
 
     const read = await handler(new Request("http://localhost/read", { headers: { cookie: `sid=${sid}` } }));
     expect(((await read.json()) as { user: string | null }).user).toBeNull();
@@ -83,6 +87,31 @@ describe("session", () => {
     expect(res.headers.get("set-cookie")).toMatch(
       /^app\.sess=[0-9a-f-]+; Max-Age=60; Path=\/; HttpOnly; SameSite=Strict; Secure$/,
     );
+  });
+
+  test("secure: false drops the Secure attribute for plain-HTTP development", async () => {
+    const res = await app({ secure: false })(new Request("http://localhost/login", { method: "POST" }));
+
+    expect(res.headers.get("set-cookie")).toBe("sid=" + sidFrom(res) + "; Max-Age=86400; Path=/; HttpOnly; SameSite=Lax");
+  });
+
+  test("regenerate() issues a new id, keeps the data, and invalidates the old id", async () => {
+    const handler = app();
+    const login = await handler(new Request("http://localhost/login", { method: "POST" }));
+    const oldSid = sidFrom(login);
+
+    const rotated = await handler(
+      new Request("http://localhost/rotate", { method: "POST", headers: { cookie: `sid=${oldSid}` } }),
+    );
+    const newSid = sidFrom(rotated);
+    expect(newSid).not.toBe(oldSid);
+    expect(await rotated.text()).toBe(newSid);
+
+    const withNew = await handler(new Request("http://localhost/read", { headers: { cookie: `sid=${newSid}` } }));
+    expect(((await withNew.json()) as { user: string | null }).user).toBe("ada");
+
+    const withOld = await handler(new Request("http://localhost/read", { headers: { cookie: `sid=${oldSid}` } }));
+    expect(((await withOld.json()) as { user: string | null }).user).toBeNull();
   });
 
   test("uses a custom store for reads, writes, and deletes", async () => {

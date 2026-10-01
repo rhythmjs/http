@@ -58,13 +58,16 @@ new RhythmRouter()
   });
 ```
 
-- `ctx.session`: `id`, `get(key)`, `set(key, value)`, `delete(key)`, `destroy()`.
-- The session cookie (`sid` by default; `HttpOnly`, `SameSite=Lax`, `Path=/`) is only written when the
+- `ctx.session`: `id`, `get(key)`, `set(key, value)`, `delete(key)`, `regenerate()`, `destroy()`.
+  Call `regenerate()` when privileges change (right after login): it issues a new id, carries the data
+  over, and invalidates the old id, which stops session fixation.
+- The session cookie (`sid` by default; `HttpOnly`, `Secure`, `SameSite=Lax`, `Path=/`) is only written when the
   session is first used, and `destroy()` deletes the stored session and expires the cookie. Unknown or
   expired session ids get a fresh session; the cookie value is never trusted as-is.
 - `SessionOptions`: `store` (any object satisfying `SessionStore`; the bundled `memorySessionStore()`
   by default, suitable for a single process), `cookieName`, `maxAge` (seconds, default 86400), `path`,
-  `secure`, `sameSite`.
+  `secure` (default `true`; set `false` only for plain-HTTP development, browsers still accept `Secure`
+  cookies on `http://localhost`), `sameSite`. `memorySessionStore()` sweeps expired entries as it writes.
 
 ## `@rhythmjs/http/etag`
 
@@ -185,7 +188,9 @@ new RhythmRouter().use<I18nContext>(i18n({ i18next })).get("/greet", (ctx) => {
   quality, matched exactly or by base language against `supportedLngs`), falling back to
   `fallbackLng`. Configure via `detection`: `order` (may include `"path"` for `/de/...`-style
   prefixes with `lookupPath` as the segment index), `lookupQuerystring`, `lookupCookie`,
-  `supportedLanguages`, `fallbackLanguage`.
+  `supportedLanguages`, `fallbackLanguage`. Candidates from any source must look like a language tag
+  (`^[A-Za-z]{2,8}(-[A-Za-z0-9]{1,8}){0,7}$`); anything else is ignored before it reaches i18next or
+  the `Content-Language` header.
 - `cacheCookie: true` persists the resolved language in the detection cookie
   (`cacheCookieMaxAge` seconds, default one year); `contentLanguage: false` disables the response
   header. An uninitialized instance is initialized on first request.

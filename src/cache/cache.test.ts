@@ -279,6 +279,14 @@ describe("memoryCacheStore", () => {
 });
 
 describe("cacheControl", () => {
+  test("rejects non-integer or negative durations", () => {
+    for (const bad of [-1, 1.5, Number.NaN, Infinity]) {
+      expect(() => formatCacheControl({ maxAge: bad })).toThrow(RangeError);
+    }
+    expect(() => formatCacheControl({ sMaxAge: -5 })).toThrow("sMaxAge");
+    expect(formatCacheControl({ maxAge: 0, staleIfError: 30 })).toBe("max-age=0, stale-if-error=30");
+  });
+
   test("formats directives", () => {
     expect(formatCacheControl({ public: true, maxAge: 300, staleWhileRevalidate: 60, immutable: true })).toBe(
       "public, max-age=300, stale-while-revalidate=60, immutable",

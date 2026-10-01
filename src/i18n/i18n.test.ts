@@ -58,6 +58,23 @@ describe("i18n middleware", () => {
     expect(body).toEqual({ language: "de", greeting: "Hallo" });
   });
 
+  test("ignores values that are not language tags, even without a supported list", async () => {
+    for (const bad of ["../../etc/passwd", "de%0d%0aX-Evil:1", "a".repeat(40), "d e", "%00"]) {
+      const request = new Request(`http://localhost/greet?lng=${bad}`, { headers: { "accept-language": "fr" } });
+      expect(detectLanguage(request)).toBe("fr");
+      expect(detectLanguage(new Request(`http://localhost/greet?lng=${bad}`))).toBeUndefined();
+    }
+    expect(detectLanguage(new Request("http://localhost/", { headers: { cookie: "i18next=../x" } }))).toBeUndefined();
+    expect(detectLanguage(new Request("http://localhost/?lng=zh-Hant-TW"))).toBe("zh-Hant-TW");
+  });
+
+  test("a malformed Content-Language candidate cannot make the request fail", async () => {
+    const { res, body } = await greet(app(), "http://localhost/greet?lng=de%0d%0aX-Evil:1");
+
+    expect(res.status).toBe(200);
+    expect(body.language).toBe("en");
+  });
+
   test("querystring wins over cookie and header by default", async () => {
     const { body } = await greet(app(), "http://localhost/greet?lng=fr", {
       cookie: "i18next=de",

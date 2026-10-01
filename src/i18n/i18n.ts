@@ -77,6 +77,8 @@ function readCookie(header: string | null, name: string): string | undefined {
   return undefined;
 }
 
+const LANGUAGE_TAG = /^[A-Za-z]{2,8}(?:-[A-Za-z0-9]{1,8}){0,7}$/;
+
 function candidatesFrom(request: Request, options: LanguageDetectionOptions): string[] {
   const order = options.order ?? ["querystring", "cookie", "header"];
   const url = new URL(request.url);
@@ -97,6 +99,7 @@ function candidatesFrom(request: Request, options: LanguageDetectionOptions): st
         .map((entry) => entry.language)
         .filter((language) => language !== "*");
     }
+    candidates = candidates.filter((candidate) => LANGUAGE_TAG.test(candidate));
     if (candidates.length > 0) return candidates;
   }
   return [];

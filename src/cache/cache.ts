@@ -14,15 +14,21 @@ export interface CacheControlOptions {
   immutable?: boolean;
 }
 
+function seconds(name: string, value: number): number {
+  if (!Number.isInteger(value) || value < 0) throw new RangeError(`cache-control ${name} must be a non-negative integer`);
+  return value;
+}
+
 export function formatCacheControl(options: CacheControlOptions): string {
   const directives: string[] = [];
   if (options.public) directives.push("public");
   if (options.private) directives.push("private");
-  if (options.maxAge !== undefined) directives.push(`max-age=${options.maxAge}`);
-  if (options.sMaxAge !== undefined) directives.push(`s-maxage=${options.sMaxAge}`);
+  if (options.maxAge !== undefined) directives.push(`max-age=${seconds("maxAge", options.maxAge)}`);
+  if (options.sMaxAge !== undefined) directives.push(`s-maxage=${seconds("sMaxAge", options.sMaxAge)}`);
   if (options.staleWhileRevalidate !== undefined)
-    directives.push(`stale-while-revalidate=${options.staleWhileRevalidate}`);
-  if (options.staleIfError !== undefined) directives.push(`stale-if-error=${options.staleIfError}`);
+    directives.push(`stale-while-revalidate=${seconds("staleWhileRevalidate", options.staleWhileRevalidate)}`);
+  if (options.staleIfError !== undefined)
+    directives.push(`stale-if-error=${seconds("staleIfError", options.staleIfError)}`);
   if (options.noCache) directives.push("no-cache");
   if (options.noStore) directives.push("no-store");
   if (options.mustRevalidate) directives.push("must-revalidate");

@@ -114,8 +114,8 @@
     "typescript": "^7.0.2"
   },
   "peerDependencies": {
-    "@rhythmjs/rhythm": "^0.0.14",
-    "@rhythmjs/router": "^0.0.13",
+    "@rhythmjs/rhythm": ">=0.0.14",
+    "@rhythmjs/router": ">=0.0.13",
     "i18next": "*"
   },
   "peerDependenciesMeta": {

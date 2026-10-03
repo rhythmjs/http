@@ -1,6 +1,6 @@
 {
   "name": "@rhythmjs/http",
-  "version": "0.0.9",
+  "version": "0.0.10",
   "description": "HTTP utility middleware (cookies, sessions, caching, etag, compression, sse, streaming, mounting fetch handlers, multipart, timeout, body limit) for Rhythm routers and handlers.",
   "keywords": [
     "async-local-storage",
@@ -124,7 +124,7 @@
     }
   },
   "overrides": {
-    "@rhythmjs/rhythm": "0.0.15"
+    "@rhythmjs/rhythm": "0.0.16"
   },
   "engines": {
     "bun": ">=1.2.0"

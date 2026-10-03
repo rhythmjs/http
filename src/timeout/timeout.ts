@@ -13,9 +13,7 @@ export function timeout(ms: number): Middleware<RhythmHttpContext> {
       const outcome = await Promise.race([pending, expired]);
       if (outcome === "expired") {
         pending.catch(() => undefined);
-        ctx.response.status = 504;
-        ctx.response.headers.set("content-type", "application/json");
-        ctx.response.body = JSON.stringify({ success: false, status: 504, message: "Gateway Timeout" });
+        ctx.json({ success: false, status: 504, message: "Gateway Timeout" }, 504);
       }
     } finally {
       clearTimeout(timer);

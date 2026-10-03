@@ -4,9 +4,7 @@ import type { RhythmHttpContext } from "@rhythmjs/router/adapters/context";
 export function bodyLimit(maxBytes: number): Middleware<RhythmHttpContext> {
   return async (ctx, next) => {
     const reject = (): void => {
-      ctx.response.status = 413;
-      ctx.response.headers.set("content-type", "application/json");
-      ctx.response.body = JSON.stringify({ success: false, status: 413, message: "Payload Too Large" });
+      ctx.json({ success: false, status: 413, message: "Payload Too Large" }, 413);
     };
 
     const declared = Number(ctx.request.headers.get("content-length") ?? NaN);

@@ -89,9 +89,7 @@ export function multipart(options: MultipartOptions = {}): DeriveMiddleware<Rhyt
 
   const middleware: Middleware<RhythmHttpContext & Partial<MultipartContext>> = async (ctx, next) => {
     const reject = (status: number, message: string): void => {
-      ctx.response.status = status;
-      ctx.response.headers.set("content-type", "application/json");
-      ctx.response.body = JSON.stringify({ success: false, status, message });
+      ctx.json({ success: false, status, message }, status);
     };
 
     const contentType = ctx.request.headers.get("content-type") ?? "";

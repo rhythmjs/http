@@ -24,7 +24,7 @@ new RhythmRouter().use<CookiesContext>(cookies()).get("/", (ctx) => {
   ctx.cookies.get("theme"); // string | undefined
   ctx.cookies.set("theme", "dark", { httpOnly: true, sameSite: "lax", maxAge: 3600 });
   ctx.cookies.delete("legacy");
-  ctx.response.body = "ok";
+  ctx.text("ok");
 });
 ```
 
@@ -47,14 +47,14 @@ new RhythmRouter()
   .use<SessionContext>(session())
   .post("/login", (ctx) => {
     ctx.session.set("user", "ada");
-    ctx.response.body = "logged in";
+    ctx.text("logged in");
   })
   .get("/me", (ctx) => {
-    ctx.response.body = String(ctx.session.get("user") ?? "anonymous");
+    ctx.text(String(ctx.session.get("user") ?? "anonymous"));
   })
   .post("/logout", (ctx) => {
     ctx.session.destroy();
-    ctx.response.body = "logged out";
+    ctx.text("logged out");
   });
 ```
 
@@ -176,7 +176,7 @@ await i18next.init({
 });
 
 new RhythmRouter().use<I18nContext>(i18n({ i18next })).get("/greet", (ctx) => {
-  ctx.response.body = ctx.t("greeting", { name: "Ada" }); // "Hallo Ada" for ?lng=de
+  ctx.text(ctx.t("greeting", { name: "Ada" })); // "Hallo Ada" for ?lng=de
 });
 ```
 
@@ -274,7 +274,7 @@ re-exposed on `ctx.request` already buffered, so handlers read them as usual.
 import { bodyLimit } from "@rhythmjs/http/body-limit";
 
 new RhythmRouter().use(bodyLimit(1024 * 1024)).post("/upload", async (ctx) => {
-  ctx.response.body = "stored";
+  ctx.text("stored");
 });
 ```
 
@@ -313,7 +313,7 @@ new RhythmRouter().post("/upload", multipart({ maxBytes: 10_000_000, maxFiles: 3
   ctx.form.get("title"); // string | undefined
   ctx.form.file("avatar"); // File | undefined
   ctx.form.files(); // File[]
-  ctx.response.body = "stored";
+  ctx.text("stored");
 });
 ```
 

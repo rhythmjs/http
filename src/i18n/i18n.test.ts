@@ -1,12 +1,11 @@
 import { describe, expect, test } from "bun:test";
 import { createInstance } from "i18next";
-import { Rhythm } from "@rhythmjs/rhythm";
+import { Rhythm, mount, type Mountable } from "@rhythmjs/rhythm";
 import { RhythmRouter } from "@rhythmjs/router";
 import { toFetchHandler } from "@rhythmjs/router/fetch";
-import type { RhythmHttpContext } from "@rhythmjs/router/adapters/context";
 import { detectLanguage, i18n, type I18nOptions, parseAcceptLanguage } from "./i18n";
 
-const serve = (router: RhythmRouter<any>) => toFetchHandler(new Rhythm<RhythmHttpContext>().use(router.middleware()));
+const serve = (router: Mountable) => toFetchHandler(new Rhythm().use(mount(router)));
 
 const instance = () =>
   createInstance({

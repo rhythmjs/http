@@ -1,10 +1,10 @@
-import type { Middleware, NextFn } from "@rhythmjs/rhythm/types";
+import type { Middleware, Next } from "@rhythmjs/rhythm/types";
 import { addRoute, createRouter, findRoute } from "rou3";
-import type { RhythmHttpContext } from "@rhythmjs/router/adapters/context";
+import type { RhythmHttpContext } from "@rhythmjs/router/context";
 
 export type MountHandler<TContext extends RhythmHttpContext = RhythmHttpContext> = (
   ctx: TContext,
-  next: NextFn<TContext>,
+  next: Next,
 ) => Response | void | Promise<Response | void>;
 
 function apply(ctx: RhythmHttpContext, response: Response): void {

@@ -1,11 +1,10 @@
 import { describe, expect, test } from "bun:test";
-import { Rhythm } from "@rhythmjs/rhythm";
+import { Rhythm, mount } from "@rhythmjs/rhythm";
 import { RhythmRouter } from "@rhythmjs/router";
 import { toFetchHandler } from "@rhythmjs/router/fetch";
-import type { RhythmHttpContext } from "@rhythmjs/router/adapters/context";
 import { timeout } from "./timeout";
 
-const serve = (router: RhythmRouter) => toFetchHandler(new Rhythm<RhythmHttpContext>().use(router.middleware()));
+const serve = (router: RhythmRouter) => toFetchHandler(new Rhythm().use(mount(router)));
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -44,7 +43,7 @@ describe("timeout", () => {
       }),
     );
 
-    await expect(app(new Request("http://localhost/boom"))).rejects.toThrow("boom");
+    await expect(app(new Request("http://localhost/boom"))).rejects.toMatchObject({ cause: { message: "boom" } });
   });
 
   test("applies per request, not once per middleware instance", async () => {

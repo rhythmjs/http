@@ -1,5 +1,5 @@
-import type { DeriveMiddleware, Middleware } from "@rhythmjs/rhythm/types";
-import type { RhythmHttpContext } from "@rhythmjs/router/adapters/context";
+import type { ExtensionMiddleware, Middleware } from "@rhythmjs/rhythm/types";
+import type { RhythmHttpContext } from "@rhythmjs/router/context";
 
 export type RequestFormData = Awaited<ReturnType<Request["formData"]>>;
 export type FormFile = Exclude<ReturnType<RequestFormData["get"]>, string | null>;
@@ -83,7 +83,7 @@ function parse(request: Request, maxBytes: number): Promise<RequestFormData> {
   return new Request(request.url, init as RequestInit).formData();
 }
 
-export function multipart(options: MultipartOptions = {}): DeriveMiddleware<RhythmHttpContext, MultipartContext> {
+export function multipart(options: MultipartOptions = {}): ExtensionMiddleware<RhythmHttpContext, MultipartContext> {
   const { maxFileSize, maxFiles, maxFields } = options;
   const maxBytes = options.maxBytes ?? DEFAULT_MAX_BYTES;
 
@@ -138,5 +138,5 @@ export function multipart(options: MultipartOptions = {}): DeriveMiddleware<Rhyt
     await next();
   };
 
-  return middleware as DeriveMiddleware<RhythmHttpContext, MultipartContext>;
+  return middleware as ExtensionMiddleware<RhythmHttpContext, MultipartContext>;
 }

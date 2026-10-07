@@ -1,11 +1,10 @@
 import { describe, expect, test } from "bun:test";
-import { Rhythm } from "@rhythmjs/rhythm";
+import { Rhythm, mount, type Mountable } from "@rhythmjs/rhythm";
 import { RhythmRouter } from "@rhythmjs/router";
 import { toFetchHandler } from "@rhythmjs/router/fetch";
-import type { RhythmHttpContext } from "@rhythmjs/router/adapters/context";
 import { cookies, parseCookies, serializeCookie } from "./cookies";
 
-const serve = (router: RhythmRouter<any>) => toFetchHandler(new Rhythm<RhythmHttpContext>().use(router.middleware()));
+const serve = (router: Mountable) => toFetchHandler(new Rhythm().use(mount(router)));
 
 describe("cookies", () => {
   test("parses incoming cookies and exposes them on ctx.cookies", async () => {

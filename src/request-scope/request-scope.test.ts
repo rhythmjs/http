@@ -1,8 +1,8 @@
 import { describe, expect, test } from "bun:test";
-import { Rhythm } from "@rhythmjs/rhythm";
+import { Rhythm, mount } from "@rhythmjs/rhythm";
 import { RhythmRouter } from "@rhythmjs/router";
 import { toFetchHandler } from "@rhythmjs/router/fetch";
-import { createHttpContext, type RhythmHttpContext } from "@rhythmjs/router/adapters/context";
+import { createHttpContext, type RhythmHttpContext } from "@rhythmjs/router/context";
 import { RequestScope, RequestScopeError, requestScope } from "./request-scope";
 
 declare module "./request-scope" {
@@ -11,7 +11,7 @@ declare module "./request-scope" {
   }
 }
 
-const serve = (router: RhythmRouter) => toFetchHandler(new Rhythm<RhythmHttpContext>().use(router.middleware()));
+const serve = (router: RhythmRouter) => toFetchHandler(new Rhythm().use(mount(router)));
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 

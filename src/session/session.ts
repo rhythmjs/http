@@ -1,5 +1,5 @@
-import type { DeriveMiddleware, Middleware } from "@rhythmjs/rhythm/types";
-import type { RhythmHttpContext } from "@rhythmjs/router/adapters/context";
+import type { ExtensionMiddleware, Middleware } from "@rhythmjs/rhythm/types";
+import type { RhythmHttpContext } from "@rhythmjs/router/context";
 
 export type SessionData = Record<string, unknown>;
 
@@ -74,7 +74,7 @@ function readCookie(header: string | null, name: string): string | undefined {
   return undefined;
 }
 
-export function session(options: SessionOptions = {}): DeriveMiddleware<RhythmHttpContext, SessionContext> {
+export function session(options: SessionOptions = {}): ExtensionMiddleware<RhythmHttpContext, SessionContext> {
   const store = options.store ?? memorySessionStore();
   const cookieName = options.cookieName ?? "sid";
   const maxAge = options.maxAge ?? 86400;
@@ -132,5 +132,5 @@ export function session(options: SessionOptions = {}): DeriveMiddleware<RhythmHt
       }
     }
   };
-  return middleware as DeriveMiddleware<RhythmHttpContext, SessionContext>;
+  return middleware as ExtensionMiddleware<RhythmHttpContext, SessionContext>;
 }

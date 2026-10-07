@@ -1,5 +1,5 @@
-import type { DeriveMiddleware, Middleware } from "@rhythmjs/rhythm/types";
-import type { RhythmHttpContext } from "@rhythmjs/router/adapters/context";
+import type { ExtensionMiddleware, Middleware } from "@rhythmjs/rhythm/types";
+import type { RhythmHttpContext } from "@rhythmjs/router/context";
 
 export type DetectionSource = "querystring" | "cookie" | "header" | "path";
 
@@ -177,7 +177,7 @@ async function scopeInstance<TInstance extends I18nInstanceLike>(
 
 export function i18n<TInstance extends I18nInstanceLike>(
   options: I18nOptions<TInstance>,
-): DeriveMiddleware<RhythmHttpContext, I18nContext<TInstance>> {
+): ExtensionMiddleware<RhythmHttpContext, I18nContext<TInstance>> {
   const instance = options.i18next;
   const detection = options.detection ?? {};
   const cookieName = detection.lookupCookie ?? "i18next";
@@ -216,5 +216,5 @@ export function i18n<TInstance extends I18nInstanceLike>(
       ctx.response.headers.set("content-language", resolved);
     }
   };
-  return middleware as DeriveMiddleware<RhythmHttpContext, I18nContext<TInstance>>;
+  return middleware as ExtensionMiddleware<RhythmHttpContext, I18nContext<TInstance>>;
 }

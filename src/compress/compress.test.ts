@@ -1,11 +1,10 @@
 import { describe, expect, test } from "bun:test";
-import { Rhythm } from "@rhythmjs/rhythm";
+import { Rhythm, mount } from "@rhythmjs/rhythm";
 import { RhythmRouter } from "@rhythmjs/router";
 import { toFetchHandler } from "@rhythmjs/router/fetch";
-import type { RhythmHttpContext } from "@rhythmjs/router/adapters/context";
 import { compress, type CompressOptions } from "./compress";
 
-const serve = (router: RhythmRouter) => toFetchHandler(new Rhythm<RhythmHttpContext>().use(router.middleware()));
+const serve = (router: RhythmRouter) => toFetchHandler(new Rhythm().use(mount(router)));
 
 const LARGE_TEXT = "rhythm ".repeat(500);
 

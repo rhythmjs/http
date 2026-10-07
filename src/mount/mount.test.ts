@@ -1,8 +1,8 @@
 import { describe, expect, test } from "bun:test";
-import { Rhythm } from "@rhythmjs/rhythm";
+import { Rhythm, mount as mountRouter } from "@rhythmjs/rhythm";
 import { RhythmRouter } from "@rhythmjs/router";
 import { toFetchHandler } from "@rhythmjs/router/fetch";
-import type { RhythmHttpContext } from "@rhythmjs/router/adapters/context";
+import type { RhythmHttpContext } from "@rhythmjs/router/context";
 import { mount } from "./mount";
 
 const downstream = new RhythmRouter().get("/api/users", (ctx) => {
@@ -10,9 +10,9 @@ const downstream = new RhythmRouter().get("/api/users", (ctx) => {
 });
 
 const serve = (...middleware: ReturnType<typeof mount>[]) => {
-  let app = new Rhythm<RhythmHttpContext>();
+  let app = new Rhythm<{}, RhythmHttpContext>();
   for (const entry of middleware) app = app.use(entry);
-  return toFetchHandler(app.use(downstream.middleware()));
+  return toFetchHandler(app.use(mountRouter(downstream)));
 };
 
 const get = (handler: (request: Request) => Promise<Response>, path: string) =>
@@ -32,7 +32,7 @@ describe("mount: rou3 path conventions", () => {
   });
 
   test("a sibling that merely starts with the prefix does not match", async () => {
-    expect(await (await get(catchAll, "/api/authx")).text()).toBe("");
+    expect(await (await get(catchAll, "/api/authx")).text()).toBe("Not Found");
   });
 
   test("other requests pass through to the rest of the app", async () => {
@@ -42,19 +42,19 @@ describe("mount: rou3 path conventions", () => {
   test("* matches a single segment only, not deeper paths", async () => {
     const single = serve(mount("/api/auth/*", () => new Response("single")));
     expect(await (await get(single, "/api/auth/sign-in")).text()).toBe("single");
-    expect(await (await get(single, "/api/auth/sign-up/email")).text()).toBe("");
+    expect(await (await get(single, "/api/auth/sign-up/email")).text()).toBe("Not Found");
   });
 
   test("a static path matches that path only", async () => {
     const exact = serve(mount("/api/ping", () => new Response("pong")));
     expect(await (await get(exact, "/api/ping")).text()).toBe("pong");
-    expect(await (await get(exact, "/api/ping/more")).text()).toBe("");
+    expect(await (await get(exact, "/api/ping/more")).text()).toBe("Not Found");
   });
 
   test(":name matches one segment, and can be followed by a catch-all", async () => {
     const named = serve(mount("/hooks/:id/**", (ctx) => new Response(new URL(ctx.request.url).pathname)));
     expect(await (await get(named, "/hooks/7/deliver/now")).text()).toBe("/hooks/7/deliver/now");
-    expect(await (await get(named, "/other/7")).text()).toBe("");
+    expect(await (await get(named, "/other/7")).text()).toBe("Not Found");
   });
 
   test("/** mounts the whole app", async () => {
@@ -135,7 +135,7 @@ describe("mount: the returned Response", () => {
       ctx.response.headers.set("x-override", "early");
       return next().then(() => undefined);
     };
-    const app = new Rhythm<RhythmHttpContext>()
+    const app = new Rhythm<{}, RhythmHttpContext>()
       .use(early)
       .use(mount("/m", () => new Response("ok", { headers: { "x-override": "mounted" } })));
     const response = await get(toFetchHandler(app), "/m");

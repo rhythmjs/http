@@ -1,11 +1,10 @@
 import { describe, expect, test } from "bun:test";
-import { Rhythm } from "@rhythmjs/rhythm";
+import { Rhythm, mount, type Mountable } from "@rhythmjs/rhythm";
 import { RhythmRouter } from "@rhythmjs/router";
 import { toFetchHandler } from "@rhythmjs/router/fetch";
-import type { RhythmHttpContext } from "@rhythmjs/router/adapters/context";
 import { memorySessionStore, session, type SessionData, type SessionOptions } from "./session";
 
-const serve = (router: RhythmRouter<any>) => toFetchHandler(new Rhythm<RhythmHttpContext>().use(router.middleware()));
+const serve = (router: Mountable) => toFetchHandler(new Rhythm().use(mount(router)));
 
 const app = (options?: SessionOptions) =>
   serve(

@@ -11,6 +11,17 @@ Each module is exported by its own subpath; there is no root barrel export.
 bun add @rhythmjs/http @rhythmjs/rhythm @rhythmjs/router
 ```
 
+Every router sample below is a `RhythmRouter`, which you mount into a `Rhythm` app and serve:
+
+```ts
+import { Rhythm, mount } from "@rhythmjs/rhythm";
+import { toFetchHandler } from "@rhythmjs/router/fetch";
+
+const app = new Rhythm().use(mount(router));
+
+Bun.serve({ fetch: toFetchHandler(app) });
+```
+
 ## `@rhythmjs/http/cookies`
 
 Bun's native `Bun.CookieMap` and `Bun.Cookie` behind a `Cookies` jar on the context for reading and
@@ -18,9 +29,9 @@ writing.
 
 ```ts
 import { RhythmRouter } from "@rhythmjs/router";
-import { cookies, type CookiesContext } from "@rhythmjs/http/cookies";
+import { cookies } from "@rhythmjs/http/cookies";
 
-new RhythmRouter().use<CookiesContext>(cookies()).get("/", (ctx) => {
+new RhythmRouter().use(cookies()).get("/", (ctx) => {
   ctx.cookies.get("theme"); // string | undefined
   ctx.cookies.set("theme", "dark", { httpOnly: true, sameSite: "lax", maxAge: 3600 });
   ctx.cookies.delete("legacy");
@@ -41,10 +52,10 @@ new RhythmRouter().use<CookiesContext>(cookies()).get("/", (ctx) => {
 Cookie-based sessions with a pluggable store.
 
 ```ts
-import { session, type SessionContext } from "@rhythmjs/http/session";
+import { session } from "@rhythmjs/http/session";
 
 new RhythmRouter()
-  .use<SessionContext>(session())
+  .use(session())
   .post("/login", (ctx) => {
     ctx.session.set("user", "ada");
     ctx.text("logged in");
@@ -164,7 +175,7 @@ version) and with any compatible instance.
 
 ```ts
 import i18next from "i18next";
-import { i18n, type I18nContext } from "@rhythmjs/http/i18n";
+import { i18n } from "@rhythmjs/http/i18n";
 
 await i18next.init({
   supportedLngs: ["en", "de"],
@@ -175,7 +186,7 @@ await i18next.init({
   },
 });
 
-new RhythmRouter().use<I18nContext>(i18n({ i18next })).get("/greet", (ctx) => {
+new RhythmRouter().use(i18n({ i18next })).get("/greet", (ctx) => {
   ctx.text(ctx.t("greeting", { name: "Ada" })); // "Hallo Ada" for ?lng=de
 });
 ```
@@ -221,7 +232,7 @@ new RhythmRouter().get("/events", sse(), (ctx) => {
   `cache-control: no-cache, no-transform`, `connection: keep-alive`, `x-accel-buffering: no`
   (disables nginx proxy buffering). Headers set by the handler or by other middleware win over them.
 - `SseOptions.headers`: extra headers that override everything, including handler-set values.
-- Every server adapter streams `ReadableStream` bodies with backpressure; `ctx.request.signal` aborts
+- Bun streams `ReadableStream` bodies with backpressure; `ctx.request.signal` aborts
   on client disconnect, so producers can stop cleanly. The body streams after the middleware chain
   resolves, so after-`next()` middleware sees time-to-headers, not the lifetime of the stream.
 
@@ -244,7 +255,7 @@ new RhythmRouter().get("/report", stream(), (ctx) => {
   `x-content-type-options: nosniff` (stops browsers sniffing the stream into another type). Headers
   set by the handler or by other middleware win over them.
 - `StreamOptions.headers`: extra headers that override everything, including handler-set values.
-- Same streaming model as `sse`: adapters stream `ReadableStream` bodies with backpressure,
+- Same streaming model as `sse`: Bun streams `ReadableStream` bodies with backpressure,
   `ctx.request.signal` aborts on client disconnect, and the body streams after the middleware chain
   resolves.
 
@@ -284,12 +295,16 @@ Mounts a handler at a path, for libraries that expose a fetch-style `(request) =
 (Better Auth, tRPC, a webhook SDK) and need to answer a whole path prefix.
 
 ```ts
-import { Rhythm } from "@rhythmjs/rhythm";
 import { mount } from "@rhythmjs/http/mount";
+import { Rhythm, mount as mountRouter } from "@rhythmjs/rhythm";
+import { toFetchHandler } from "@rhythmjs/router/fetch";
+import type { RhythmHttpContext } from "@rhythmjs/router/context";
 
-const app = new Rhythm<RhythmHttpContext>()
+const app = new Rhythm<{}, RhythmHttpContext>()
   .use(mount("/api/auth/**", (ctx) => auth.handler(ctx.request)))
-  .use(router.middleware());
+  .use(mountRouter(router));
+
+Bun.serve({ fetch: toFetchHandler(app) });
 ```
 
 - `mount(path, handler)`: `handler` is a middleware, `(ctx, next) => Response | void`. A returned `Response`
@@ -307,7 +322,7 @@ Parses `multipart/form-data` request bodies once and exposes a `MultipartForm` o
 limits enforced before the handler runs. Uses the runtime's native multipart parser.
 
 ```ts
-import { multipart, type MultipartContext } from "@rhythmjs/http/multipart";
+import { multipart } from "@rhythmjs/http/multipart";
 
 new RhythmRouter().post("/upload", multipart({ maxBytes: 10_000_000, maxFiles: 3 }), (ctx) => {
   ctx.form.get("title"); // string | undefined

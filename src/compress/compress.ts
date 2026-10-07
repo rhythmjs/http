@@ -1,5 +1,5 @@
 import type { Middleware } from "@rhythmjs/rhythm/types";
-import type { RhythmHttpContext, RhythmResponseBody } from "@rhythmjs/router/adapters/context";
+import type { RhythmHttpContext, RhythmResponseBody } from "@rhythmjs/router/context";
 
 export type CompressEncoding = "gzip" | "deflate" | "zstd";
 

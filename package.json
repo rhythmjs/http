@@ -1,7 +1,7 @@
 {
   "name": "@rhythmjs/http",
   "version": "0.0.11",
-  "description": "HTTP utility middleware (cookies, sessions, caching, etag, compression, sse, streaming, mounting fetch handlers, multipart, timeout, body limit) for Rhythm routers and handlers.",
+  "description": "HTTP utility middleware (cookies, sessions, caching, etag, compression, sse, streaming, multipart, timeout, body limit) for Rhythm routers and handlers.",
   "keywords": [
     "async-local-storage",
     "body-limit",
@@ -14,7 +14,6 @@
     "i18n",
     "i18next",
     "middleware",
-    "mount",
     "multipart",
     "request-scope",
     "rhythm",
@@ -59,10 +58,6 @@
       "types": "./dist/i18n/i18n.d.ts",
       "default": "./dist/i18n/i18n.js"
     },
-    "./mount": {
-      "types": "./dist/mount/mount.d.ts",
-      "default": "./dist/mount/mount.js"
-    },
     "./multipart": {
       "types": "./dist/multipart/multipart.d.ts",
       "default": "./dist/multipart/multipart.js"
@@ -93,7 +88,7 @@
     "access": "public"
   },
   "scripts": {
-    "build": "bun build src/body-limit/body-limit.ts src/cache/cache.ts src/compress/compress.ts src/cookies/cookies.ts src/etag/etag.ts src/i18n/i18n.ts src/mount/mount.ts src/multipart/multipart.ts src/request-scope/request-scope.ts src/session/session.ts src/sse/sse.ts src/stream/stream.ts src/timeout/timeout.ts --outdir dist --root src --format esm --target bun --packages external --splitting && tsc -p tsconfig.build.json",
+    "build": "bun build src/body-limit/body-limit.ts src/cache/cache.ts src/compress/compress.ts src/cookies/cookies.ts src/etag/etag.ts src/i18n/i18n.ts src/multipart/multipart.ts src/request-scope/request-scope.ts src/session/session.ts src/sse/sse.ts src/stream/stream.ts src/timeout/timeout.ts --outdir dist --root src --format esm --target bun --packages external --splitting && tsc -p tsconfig.build.json",
     "prepublishOnly": "bun run check && bun test && bun run build",
     "typecheck": "tsc --noEmit",
     "test": "bun test",
@@ -102,9 +97,7 @@
     "fmt:check": "prettier --check \"src/**/*.ts\" \"*.json\"",
     "check": "bun run fmt:check && bun run lint && bun run typecheck"
   },
-  "dependencies": {
-    "rou3": "^0.11.0"
-  },
+  "dependencies": {},
   "devDependencies": {
     "@types/bun": "^1.2.0",
     "@types/node": "^26.6.3",
@@ -124,7 +117,7 @@
     }
   },
   "overrides": {
-    "@rhythmjs/rhythm": "0.0.19"
+    "@rhythmjs/rhythm": "0.0.20"
   },
   "engines": {
     "bun": ">=1.2.0"

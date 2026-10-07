@@ -2,7 +2,7 @@
 
 HTTP utility middleware for [Rhythm](https://github.com/rhythmjs/rhythm), the Bun-native backend
 framework: cookies, sessions, ETags, caching, compression, i18n, SSE and streaming, timeouts, body
-limits, multipart uploads, mounting fetch-style handlers, and request scoping for `@rhythmjs/router` handlers.
+limits, multipart uploads, and request scoping for `@rhythmjs/router` handlers.
 Each module is exported by its own subpath; there is no root barrel export.
 
 ## Install
@@ -288,33 +288,6 @@ new RhythmRouter().use(bodyLimit(1024 * 1024)).post("/upload", async (ctx) => {
   ctx.text("stored");
 });
 ```
-
-## `@rhythmjs/http/mount`
-
-Mounts a handler at a path, for libraries that expose a fetch-style `(request) => Response` handler
-(Better Auth, tRPC, a webhook SDK) and need to answer a whole path prefix.
-
-```ts
-import { mount } from "@rhythmjs/http/mount";
-import { Rhythm, mount as mountRouter } from "@rhythmjs/rhythm";
-import { toFetchHandler } from "@rhythmjs/router/fetch";
-import type { RhythmHttpContext } from "@rhythmjs/router/context";
-
-const app = new Rhythm<{}, RhythmHttpContext>()
-  .use(mount("/api/auth/**", (ctx) => auth.handler(ctx.request)))
-  .use(mountRouter(router));
-
-Bun.serve({ fetch: toFetchHandler(app) });
-```
-
-- `mount(path, handler)`: `handler` is a middleware, `(ctx, next) => Response | void`. A returned `Response`
-  becomes the response (status, headers, body stream; every `Set-Cookie` is kept) and the chain stops. A
-  handler that returns nothing decides for itself and may call `next()`, like any middleware.
-- `path` uses the same [rou3](https://github.com/h3js/rou3) conventions as `@rhythmjs/router`: static
-  segments, `:name` parameters, `*` for a single segment and `**` as the catch-all. `"/api/auth/**"` matches
-  `/api/auth` and everything beneath it at any depth, but not `/api/authx`; `"/**"` mounts everything. The HTTP
-  method is not part of the match.
-- Requests that do not match go on to the rest of the app untouched, and the handler is never run for them.
 
 ## `@rhythmjs/http/multipart`
 
